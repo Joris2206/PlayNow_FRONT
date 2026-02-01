@@ -68,7 +68,7 @@ export default function Page() {
           />
           <div className="md:col-span-2 flex flex-col justify-between">
             <div>
-              <h3 className="text-xl font-bold">Tu mundo gamer comienza aquí</h3>
+              <h3 className="text-xl font-bold">Tu mundo gamer comienza aquí...</h3>
               <p className="mt-2 text-[#233746]/80">
                 Descubre lanzamientos y ediciones exclusivas con envío rápido. Catálogo curado para todas las consolas.
               </p>
