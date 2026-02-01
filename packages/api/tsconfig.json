@@ -5,8 +5,10 @@
     "moduleResolution": "Bundler",
     "target": "ES2022",
     "jsx": "react-jsx",
+    "declaration": true,
+    "emitDeclarationOnly": false,
     "skipLibCheck": true,
-    "types": ["react", "react-dom", "node"]
+    "types": ["node"]
   },
   "include": ["./**/*.ts", "./**/*.tsx"]
 }
