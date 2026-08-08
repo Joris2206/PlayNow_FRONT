@@ -3,8 +3,8 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "dev:web": "pnpm --filter ./apps/web dev -- -p 3001",
-    "dev:admin": "pnpm --filter ./apps/admin dev -- -p 3000",
+    "dev:web": "pnpm --filter ./apps/web exec next dev -p 3001",
+    "dev:admin": "pnpm --filter ./apps/admin exec next dev -p 3000",
     "dev": "turbo run dev --parallel",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
