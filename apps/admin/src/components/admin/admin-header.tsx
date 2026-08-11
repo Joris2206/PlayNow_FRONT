@@ -10,6 +10,7 @@ import {
 
 import { authService } from "@/services/auth-service";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/providers/auth-provider";
 
 type AdminHeaderProps = {
   onOpenSidebar: () => void;
@@ -19,6 +20,7 @@ export default function AdminHeader({
   onOpenSidebar,
 }: AdminHeaderProps) {
   const router = useRouter();
+  const { user, isLoading, activeMembership } = useAuth();
 
   function handleLogout() {
     authService.logout();
@@ -40,11 +42,13 @@ export default function AdminHeader({
 
         <div>
           <p className="text-sm text-zinc-500">
-            Panel administrativo
+            {isLoading
+              ? "Cargando..."
+              : activeMembership?.business_name ?? "PlayNow"}
           </p>
 
           <h1 className="text-lg font-semibold text-white">
-            PlayNow
+            Panel administrativo
           </h1>
         </div>
       </div>
@@ -56,12 +60,16 @@ export default function AdminHeader({
           </div>
 
           <div className="pr-2">
-            <p className="text-sm font-medium text-white">
-              Administrador
+            <p className="text-sm text-zinc-500">
+              {isLoading
+                ? "Cargando..."
+                : user?.full_name ?? "??"}
             </p>
 
-            <p className="text-xs text-zinc-500">
-              Sesión activa
+            <p className="text-sm text-zinc-500">
+              {isLoading
+                ? "Cargando..."
+                : activeMembership?.role ?? "No definido"}
             </p>
           </div>
         </div>

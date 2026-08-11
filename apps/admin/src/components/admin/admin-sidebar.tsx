@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ROLES, type UserRole } from "@/types/roles";
 
 import {
   Boxes,
@@ -17,8 +18,17 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { hasRole } from "@/lib/permissions";
+import { useAuth } from "@/providers/auth-provider";
 
-const navigation = [
+type NavigationItem = {
+  label: string;
+  href: string;
+  icon: React.ElementType;
+  roles?: UserRole[];
+};
+
+const navigation: NavigationItem[] = [
   {
     label: "Dashboard",
     href: "/dashboard",
@@ -28,41 +38,90 @@ const navigation = [
     label: "Productos",
     href: "/products",
     icon: Package,
+    roles: [
+      ROLES.OWNER,
+      ROLES.ADMIN,
+      ROLES.INVENTORY,
+      ROLES.SELLER,
+      ROLES.VIEWER,
+    ],
   },
   {
     label: "Inventario",
     href: "/inventory",
     icon: Boxes,
+    roles: [
+      ROLES.OWNER,
+      ROLES.ADMIN,
+      ROLES.INVENTORY,
+      ROLES.VIEWER,
+    ],
   },
   {
     label: "Ventas",
     href: "/sales",
     icon: ShoppingCart,
+    roles: [
+      ROLES.OWNER,
+      ROLES.ADMIN,
+      ROLES.CASHIER,
+      ROLES.SELLER,
+      ROLES.VIEWER,
+    ],
   },
   {
     label: "Clientes",
     href: "/customers",
     icon: Users,
+    roles: [
+      ROLES.OWNER,
+      ROLES.ADMIN,
+      ROLES.CASHIER,
+      ROLES.SELLER,
+      ROLES.VIEWER,
+    ],
   },
   {
     label: "Proveedores",
     href: "/suppliers",
     icon: Truck,
+    roles: [
+      ROLES.OWNER,
+      ROLES.ADMIN,
+      ROLES.INVENTORY,
+      ROLES.VIEWER,
+    ],
   },
   {
     label: "Deudas",
     href: "/debts",
     icon: WalletCards,
+    roles: [
+      ROLES.OWNER,
+      ROLES.ADMIN,
+      ROLES.CASHIER,
+      ROLES.VIEWER,
+    ],
   },
   {
     label: "Caja",
     href: "/cash",
     icon: CircleDollarSign,
+    roles: [
+      ROLES.OWNER,
+      ROLES.ADMIN,
+      ROLES.CASHIER,
+    ],
   },
   {
     label: "Reportes",
     href: "/reports",
     icon: ReceiptText,
+    roles: [
+      ROLES.OWNER,
+      ROLES.ADMIN,
+      ROLES.VIEWER,
+    ],
   },
 ];
 
@@ -76,6 +135,10 @@ export default function AdminSidebar({
   onClose,
 }: AdminSidebarProps) {
   const pathname = usePathname();
+  const { user, isLoading, activeMembership } = useAuth();
+  const visibleNavigation = navigation.filter((item) =>
+                hasRole(activeMembership?.role, item.roles)
+              );
 
   return (
     <>
@@ -105,8 +168,10 @@ export default function AdminSidebar({
             </div>
 
             <div>
-              <p className="text-lg font-bold tracking-tight text-white">
-                PlayNow
+              <p className="text-sm text-zinc-500">
+                {isLoading
+                  ? "Cargando..."
+                  : activeMembership?.business_name ?? "PlayNow"}
               </p>
 
               <p className="text-xs text-zinc-500">
@@ -120,9 +185,9 @@ export default function AdminSidebar({
           <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-widest text-zinc-600">
             Administración
           </p>
-
+          
           <div className="space-y-1">
-            {navigation.map((item) => {
+            {visibleNavigation.map((item) => {
               const Icon = item.icon;
 
               const active =
