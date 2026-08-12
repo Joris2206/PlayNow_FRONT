@@ -15,7 +15,7 @@ export const productService = {
     params: ProductListParams
   ): Promise<PaginatedResponse<Product>> {
     const query = buildQueryString({
-      business__public_id:
+      business_public_id:
         params.business_public_id,
 
       page: params.page,

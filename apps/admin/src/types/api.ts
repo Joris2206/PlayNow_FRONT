@@ -16,6 +16,6 @@ export type ListQueryParams = {
 };
 
 export type BusinessListQueryParams = ListQueryParams & {
-  business_public_id?: string;
+  business_public_id: string;
   status?: number;
 };

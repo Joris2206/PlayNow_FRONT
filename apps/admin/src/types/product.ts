@@ -1,7 +1,10 @@
+import type { BusinessListQueryParams } from "@/types/api";
+
 export type Product = {
   public_id: string;
   business: string;
   category: string;
+  category_name: string;
   title: string;
   description: string | null;
   image_url: string | null;
@@ -10,15 +13,10 @@ export type Product = {
   stock: number;
   is_visible: boolean;
   status: string;
+  status_name: string;
   created_at: string;
   updated_at: string;
 };
 
-export type ProductListParams = {
-  business_public_id: string;
-  page?: number;
-  page_size?: number;
-  search?: string;
-  ordering?: string;
-  status?: number;
-};
+export type ProductListParams =
+  BusinessListQueryParams;

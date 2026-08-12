@@ -3,7 +3,7 @@ import { buildQueryString } from "@/lib/query-string";
 
 import type {
   PaginatedResponse,
-  ListQueryParams,
+  BusinessListQueryParams,
 } from "@/types/api";
 
 import type {
@@ -13,13 +13,17 @@ import type {
 
 export const categoryService = {
   list(
-    params: ListQueryParams = {}
+    params: BusinessListQueryParams
   ): Promise<PaginatedResponse<Category>> {
     const query = buildQueryString({
+      business_public_id:
+        params.business_public_id,
+
       page: params.page,
       page_size: params.page_size,
       search: params.search,
       ordering: params.ordering,
+      status: params.status,
     });
 
     return http.get<PaginatedResponse<Category>>(

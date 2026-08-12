@@ -103,7 +103,7 @@ export default function ProductsTable({
                 </td>
 
                 <td className="px-5 py-4 text-sm text-zinc-400">
-                  {product.category}
+                  {product.category_name ?? "Sin categoría"}
                 </td>
 
                 <td className="px-5 py-4 text-sm font-medium text-white">
@@ -122,7 +122,7 @@ export default function ProductsTable({
 
                 <td className="px-5 py-4">
                   <span className="inline-flex rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-400">
-                    {product.status}
+                    {product.status_name}
                   </span>
                 </td>
 
