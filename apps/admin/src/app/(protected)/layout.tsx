@@ -10,12 +10,12 @@ export default function ProtectedLayout({
   children,
 }: ProtectedLayoutProps) {
   return (
-    <AuthGuard>
-      <AuthProvider>
+    <AuthProvider>
+      <AuthGuard>
         <AdminLayout>
           {children}
         </AdminLayout>
-      </AuthProvider>
-    </AuthGuard>
+      </AuthGuard>
+    </AuthProvider>
   );
 }

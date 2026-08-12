@@ -2,7 +2,10 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import {
   Eye,
   EyeOff,
@@ -19,13 +22,23 @@ import { Input } from "@/components/ui/input";
 
 export default function LoginForm() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const loginMutation = useMutation({
-    mutationFn: authService.login,
+    mutationFn: async (
+      credentials: Parameters<
+        typeof authService.login
+      >[0]
+    ) => {
+      await queryClient.cancelQueries();
+      queryClient.removeQueries();
+
+      return authService.login(credentials);
+    },
 
     onSuccess: () => {
       router.replace("/dashboard");

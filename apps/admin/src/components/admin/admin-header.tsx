@@ -1,7 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-
 import {
   LogOut,
   Menu,
@@ -19,12 +17,10 @@ type AdminHeaderProps = {
 export default function AdminHeader({
   onOpenSidebar,
 }: AdminHeaderProps) {
-  const router = useRouter();
   const { user, isLoading, activeMembership } = useAuth();
 
   function handleLogout() {
-    authService.logout();
-    router.replace("/login");
+    void authService.logout();
   }
 
   return (

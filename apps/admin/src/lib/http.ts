@@ -1,4 +1,10 @@
 import { apiUrl } from "@/lib/api";
+import {
+  getSessionGeneration,
+  isCurrentSession,
+  isTokenPair,
+  terminateSession,
+} from "@/lib/session";
 import { tokenStorage } from "@/lib/token-storage";
 
 export class HttpError extends Error {
@@ -24,45 +30,98 @@ type RequestOptions = Omit<RequestInit, "body"> & {
   skipRefresh?: boolean;
 };
 
-type RefreshResponse = {
-  access: string;
-  refresh: string;
+type ExecutedRequest = {
+  response: Response;
+  accessToken: string | null;
 };
 
-let refreshPromise: Promise<boolean> | null = null;
+type RefreshState = {
+  generation: number;
+  promise: Promise<boolean>;
+};
+
+let refreshState: RefreshState | null = null;
 
 async function request<T>(
   endpoint: string,
   options: RequestOptions = {}
 ): Promise<T> {
+  const sessionGeneration = getSessionGeneration();
+
   const {
     skipAuth = false,
     skipRefresh = false,
     ...fetchOptions
   } = options;
 
-  const response = await executeRequest(
+  const initialRequest = await executeRequest(
     endpoint,
     fetchOptions,
     skipAuth
   );
 
   if (
-    response.status === 401 &&
+    initialRequest.response.status === 401 &&
     !skipRefresh &&
     !skipAuth
   ) {
-    const refreshed = await refreshAccessToken();
+    if (!isCurrentSession(sessionGeneration)) {
+      return handleResponse<T>(initialRequest.response);
+    }
 
-    if (refreshed) {
+    const currentAccessToken =
+      tokenStorage.getAccessToken();
+
+    if (
+      currentAccessToken &&
+      currentAccessToken !== initialRequest.accessToken
+    ) {
+      const retryWithCurrentToken =
+        await executeRequest(
+          endpoint,
+          fetchOptions,
+          false
+        );
+
+      return handleAuthenticatedRetry<T>(
+        retryWithCurrentToken.response,
+        sessionGeneration
+      );
+    }
+
+    const refreshed = await refreshAccessToken(
+      sessionGeneration
+    );
+
+    if (
+      refreshed &&
+      isCurrentSession(sessionGeneration)
+    ) {
       const retryResponse = await executeRequest(
         endpoint,
         fetchOptions,
         false
       );
 
-      return handleResponse<T>(retryResponse);
+      return handleAuthenticatedRetry<T>(
+        retryResponse.response,
+        sessionGeneration
+      );
     }
+  }
+
+  return handleResponse<T>(initialRequest.response);
+}
+
+async function handleAuthenticatedRetry<T>(
+  response: Response,
+  generation: number
+): Promise<T> {
+  if (
+    response.status === 401 &&
+    isCurrentSession(generation)
+  ) {
+    await terminateSession();
   }
 
   return handleResponse<T>(response);
@@ -76,9 +135,10 @@ async function executeRequest(
   const url = `${apiUrl}${endpoint}`;
 
   const headers = new Headers(options.headers);
+  let accessToken: string | null = null;
 
   if (!skipAuth) {
-    const accessToken = tokenStorage.getAccessToken();
+    accessToken = tokenStorage.getAccessToken();
 
     if (accessToken) {
       headers.set(
@@ -95,7 +155,7 @@ async function executeRequest(
     );
   }
 
-  return fetch(url, {
+  const response = await fetch(url, {
     ...options,
     headers,
     body:
@@ -103,33 +163,57 @@ async function executeRequest(
         ? JSON.stringify(options.body)
         : undefined,
   });
+
+  return {
+    response,
+    accessToken,
+  } satisfies ExecutedRequest;
 }
 
-async function refreshAccessToken(): Promise<boolean> {
-  if (refreshPromise) {
-    return refreshPromise;
+async function refreshAccessToken(
+  generation: number
+): Promise<boolean> {
+  if (!isCurrentSession(generation)) {
+    return false;
   }
 
-  refreshPromise = performRefresh();
+  if (refreshState?.generation === generation) {
+    return refreshState.promise;
+  }
+
+  const promise = performRefresh(generation);
+
+  refreshState = {
+    generation,
+    promise,
+  };
 
   try {
-    return await refreshPromise;
+    return await promise;
   } finally {
-    refreshPromise = null;
+    if (refreshState?.promise === promise) {
+      refreshState = null;
+    }
   }
 }
 
-async function performRefresh(): Promise<boolean> {
+async function performRefresh(
+  generation: number
+): Promise<boolean> {
   const refreshToken = tokenStorage.getRefreshToken();
 
   if (!refreshToken) {
-    tokenStorage.clearTokens();
+    if (isCurrentSession(generation)) {
+      await terminateSession();
+    }
 
     return false;
   }
 
+  let response: Response;
+
   try {
-    const response = await fetch(
+    response = await fetch(
       `${apiUrl}/api/token/refresh/`,
       {
         method: "POST",
@@ -143,27 +227,56 @@ async function performRefresh(): Promise<boolean> {
         }),
       }
     );
+  } catch {
+    throw new HttpError(
+      "No fue posible renovar la sesión.",
+      0
+    );
+  }
 
-    if (!response.ok) {
-      tokenStorage.clearTokens();
+  if (!response.ok) {
+    if (
+      response.status === 400 ||
+      response.status === 401
+    ) {
+      if (isCurrentSession(generation)) {
+        await terminateSession();
+      }
 
       return false;
     }
 
-    const data =
-      (await response.json()) as RefreshResponse;
+    return handleResponse<boolean>(response);
+  }
 
-    tokenStorage.setTokens(
-      data.access,
-      data.refresh
-    );
+  let data: unknown;
 
-    return true;
+  try {
+    data = await response.json();
   } catch {
-    tokenStorage.clearTokens();
+    if (isCurrentSession(generation)) {
+      await terminateSession();
+    }
 
     return false;
   }
+
+  if (!isCurrentSession(generation)) {
+    return false;
+  }
+
+  if (!isTokenPair(data)) {
+    await terminateSession();
+
+    return false;
+  }
+
+  tokenStorage.setTokens(
+    data.access,
+    data.refresh
+  );
+
+  return true;
 }
 
 async function handleResponse<T>(
