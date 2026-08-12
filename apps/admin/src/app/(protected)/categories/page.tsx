@@ -1,32 +1,31 @@
 "use client";
 
-import Link from "next/link";
 import {
   useEffect,
   useState,
 } from "react";
-
 import {
   AlertCircle,
   LoaderCircle,
   Plus,
-  Tags,
 } from "lucide-react";
 
 import { useAuth } from "@/providers/auth-provider";
-import { useProducts } from "@/hooks/use-products";
+import { useCategories } from "@/hooks/use-categories";
 
+import CategoriesTable from "@/components/categories/categories-table";
+import CategoriesToolbar from "@/components/categories/categories-toolbar";
+import CreateCategoryDialog from "@/components/categories/create-category-dialog";
 import PageHeader from "@/components/shared/page-header";
-import CreateProductDialog from "@/components/products/create-product-dialog";
-import ProductsToolbar from "@/components/products/products-toolbar";
-import ProductsTable from "@/components/products/products-table";
-
 import { Button } from "@/components/ui/button";
 
 const PAGE_SIZE = 20;
 
-export default function ProductsPage() {
+export default function CategoriesPage() {
   const { activeMembership } = useAuth();
+
+  const businessPublicId =
+    activeMembership?.business_public_id;
 
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] =
@@ -34,9 +33,6 @@ export default function ProductsPage() {
   const [search, setSearch] = useState("");
   const [createDialogOpen, setCreateDialogOpen] =
     useState(false);
-
-  const businessPublicId =
-    activeMembership?.business_public_id;
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -47,75 +43,60 @@ export default function ProductsPage() {
     return () => clearTimeout(timeout);
   }, [searchInput]);
 
-  const productsQuery = useProducts({
+  const categoriesQuery = useCategories({
     businessPublicId,
-
     page,
     pageSize: PAGE_SIZE,
     search,
   });
 
-  const data = productsQuery.data;
+  const data = categoriesQuery.data;
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <PageHeader
         eyebrow="Catálogo"
-        title="Productos"
-        description="Administra los productos disponibles en tu negocio."
+        title="Categorías"
+        description="Organiza los productos de tu negocio mediante categorías."
         actions={
-          <>
-            <Button
-              type="button"
-              variant="outline"
-              asChild
-              className="border-white/10 bg-transparent text-zinc-300 hover:bg-white/5 hover:text-white"
-            >
-              <Link href="/categories">
-                <Tags className="h-4 w-4" />
-                Administrar categorías
-              </Link>
-            </Button>
-
-            <Button
-              type="button"
-              onClick={() =>
-                setCreateDialogOpen(true)
-              }
-              disabled={!businessPublicId}
-              className="bg-red-500 text-white hover:bg-red-600"
-            >
-              <Plus className="h-4 w-4" />
-              Nuevo producto
-            </Button>
-          </>
+          <Button
+            type="button"
+            onClick={() =>
+              setCreateDialogOpen(true)
+            }
+            disabled={!businessPublicId}
+            className="bg-red-500 text-white hover:bg-red-600"
+          >
+            <Plus className="h-4 w-4" />
+            Nueva categoría
+          </Button>
         }
       />
 
-      <ProductsToolbar
+      <CategoriesToolbar
         search={searchInput}
         onSearchChange={setSearchInput}
       />
 
-      {productsQuery.isLoading && (
+      {categoriesQuery.isLoading && (
         <div className="flex min-h-80 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03]">
           <div className="flex flex-col items-center gap-4">
             <LoaderCircle className="h-7 w-7 animate-spin text-red-500" />
 
             <p className="text-sm text-zinc-500">
-              Cargando productos...
+              Cargando categorías...
             </p>
           </div>
         </div>
       )}
 
-      {productsQuery.isError && (
+      {categoriesQuery.isError && (
         <div className="flex min-h-56 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/5 px-6">
           <div className="text-center">
             <AlertCircle className="mx-auto h-7 w-7 text-red-400" />
 
             <h3 className="mt-4 font-medium text-white">
-              No pudimos cargar los productos
+              No pudimos cargar las categorías
             </h3>
 
             <p className="mt-2 text-sm text-zinc-500">
@@ -126,7 +107,7 @@ export default function ProductsPage() {
               type="button"
               variant="outline"
               onClick={() =>
-                productsQuery.refetch()
+                categoriesQuery.refetch()
               }
               className="mt-5 border-white/10 bg-transparent text-white hover:bg-white/5"
             >
@@ -136,15 +117,15 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {productsQuery.isSuccess && data && (
+      {categoriesQuery.isSuccess && data && (
         <>
-          <ProductsTable
-            products={data.results}
+          <CategoriesTable
+            categories={data.results}
           />
 
           <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-zinc-500">
-              {data.count} producto
+              {data.count} categoría
               {data.count === 1 ? "" : "s"} en total
             </p>
 
@@ -186,7 +167,7 @@ export default function ProductsPage() {
         </>
       )}
 
-      <CreateProductDialog
+      <CreateCategoryDialog
         businessPublicId={businessPublicId}
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}

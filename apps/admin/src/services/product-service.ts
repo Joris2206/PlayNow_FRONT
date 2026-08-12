@@ -6,8 +6,10 @@ import type {
 } from "@/types/api";
 
 import type {
+  CreateProductRequest,
   Product,
   ProductListParams,
+  UpdateProductRequest,
 } from "@/types/product";
 
 export const productService = {
@@ -22,11 +24,37 @@ export const productService = {
       page_size: params.page_size,
       search: params.search,
       ordering: params.ordering,
-      status: params.status,
+      status_public_id:
+        params.status_public_id,
     });
 
     return http.get<PaginatedResponse<Product>>(
       `/api/products/${query}`
+    );
+  },
+
+  create(
+    data: CreateProductRequest
+  ): Promise<Product> {
+    return http.post<Product>(
+      "/api/products/",
+      data
+    );
+  },
+
+  update(
+    publicId: string,
+    data: UpdateProductRequest
+  ): Promise<Product> {
+    return http.patch<Product>(
+      `/api/products/${publicId}/`,
+      data
+    );
+  },
+
+  delete(publicId: string): Promise<void> {
+    return http.delete<void>(
+      `/api/products/${publicId}/`
     );
   },
 };

@@ -110,9 +110,11 @@ Follow these conventions:
 - public resources use `public_id` rather than internal database IDs;
 - general/list requests use `business_public_id` when the endpoint is
   business-scoped and requires it;
-- POST requests use `business_public_id` when creating a business-scoped
-  resource;
+- every public relationship represented by another resource's `public_id` uses
+  `<relation>_public_id` in requests and responses;
 - PUT/PATCH/DELETE identify the target resource by its `public_id`;
+- choices and enums retain their semantic field names and must not be renamed
+  to `*_public_id` merely because a field such as `status` has that name;
 - special endpoints such as authentication, business creation, and `/api/me/`
   may have different contracts.
 

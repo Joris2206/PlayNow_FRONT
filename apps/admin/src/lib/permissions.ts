@@ -8,6 +8,15 @@ const ADMIN_ACCESS_ROLES = {
     ROLES.SELLER,
     ROLES.VIEWER,
   ],
+  "catalog-edit": [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+    ROLES.INVENTORY,
+  ],
+  "catalog-delete": [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+  ],
   inventory: [
     ROLES.OWNER,
     ROLES.ADMIN,

@@ -23,7 +23,8 @@ export const categoryService = {
       page_size: params.page_size,
       search: params.search,
       ordering: params.ordering,
-      status: params.status,
+      status_public_id:
+        params.status_public_id,
     });
 
     return http.get<PaginatedResponse<Category>>(
