@@ -2,128 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ROLES, type UserRole } from "@/types/roles";
 
-import {
-  Boxes,
-  CircleDollarSign,
-  Gamepad2,
-  LayoutDashboard,
-  Package,
-  ReceiptText,
-  ShoppingCart,
-  Truck,
-  Users,
-  WalletCards,
-} from "lucide-react";
+import { Gamepad2 } from "lucide-react";
 
+import { adminNavigation } from "@/config/admin-navigation";
 import { cn } from "@/lib/utils";
-import { hasRole } from "@/lib/permissions";
+import { hasAccess } from "@/lib/permissions";
 import { useAuth } from "@/providers/auth-provider";
-
-type NavigationItem = {
-  label: string;
-  href: string;
-  icon: React.ElementType;
-  roles?: UserRole[];
-};
-
-const navigation: NavigationItem[] = [
-  {
-    label: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    label: "Productos",
-    href: "/products",
-    icon: Package,
-    roles: [
-      ROLES.OWNER,
-      ROLES.ADMIN,
-      ROLES.INVENTORY,
-      ROLES.SELLER,
-      ROLES.VIEWER,
-    ],
-  },
-  {
-    label: "Inventario",
-    href: "/inventory",
-    icon: Boxes,
-    roles: [
-      ROLES.OWNER,
-      ROLES.ADMIN,
-      ROLES.INVENTORY,
-      ROLES.VIEWER,
-    ],
-  },
-  {
-    label: "Ventas",
-    href: "/sales",
-    icon: ShoppingCart,
-    roles: [
-      ROLES.OWNER,
-      ROLES.ADMIN,
-      ROLES.CASHIER,
-      ROLES.SELLER,
-      ROLES.VIEWER,
-    ],
-  },
-  {
-    label: "Clientes",
-    href: "/customers",
-    icon: Users,
-    roles: [
-      ROLES.OWNER,
-      ROLES.ADMIN,
-      ROLES.CASHIER,
-      ROLES.SELLER,
-      ROLES.VIEWER,
-    ],
-  },
-  {
-    label: "Proveedores",
-    href: "/suppliers",
-    icon: Truck,
-    roles: [
-      ROLES.OWNER,
-      ROLES.ADMIN,
-      ROLES.INVENTORY,
-      ROLES.VIEWER,
-    ],
-  },
-  {
-    label: "Deudas",
-    href: "/debts",
-    icon: WalletCards,
-    roles: [
-      ROLES.OWNER,
-      ROLES.ADMIN,
-      ROLES.CASHIER,
-      ROLES.VIEWER,
-    ],
-  },
-  {
-    label: "Caja",
-    href: "/cash",
-    icon: CircleDollarSign,
-    roles: [
-      ROLES.OWNER,
-      ROLES.ADMIN,
-      ROLES.CASHIER,
-    ],
-  },
-  {
-    label: "Reportes",
-    href: "/reports",
-    icon: ReceiptText,
-    roles: [
-      ROLES.OWNER,
-      ROLES.ADMIN,
-      ROLES.VIEWER,
-    ],
-  },
-];
 
 type AdminSidebarProps = {
   open: boolean;
@@ -135,10 +20,14 @@ export default function AdminSidebar({
   onClose,
 }: AdminSidebarProps) {
   const pathname = usePathname();
-  const { user, isLoading, activeMembership } = useAuth();
-  const visibleNavigation = navigation.filter((item) =>
-                hasRole(activeMembership?.role, item.roles)
-              );
+  const { isLoading, activeMembership } = useAuth();
+  const visibleNavigation = adminNavigation.filter(
+    (item) =>
+      hasAccess(
+        activeMembership?.role,
+        item.access
+      )
+  );
 
   return (
     <>
