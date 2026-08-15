@@ -12,3 +12,9 @@ export type CreateCategoryRequest = {
   business_public_id: string;
   name: string;
 };
+
+export type UpdateCategoryRequest = {
+  business_public_id?: string;
+  name?: string;
+  status_public_id?: string;
+};

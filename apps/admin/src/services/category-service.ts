@@ -9,6 +9,7 @@ import type {
 import type {
   Category,
   CreateCategoryRequest,
+  UpdateCategoryRequest,
 } from "@/types/category";
 
 export const categoryService = {
@@ -38,6 +39,22 @@ export const categoryService = {
     return http.post<Category>(
       "/api/categories/",
       data
+    );
+  },
+
+  update(
+    publicId: string,
+    data: UpdateCategoryRequest
+  ): Promise<Category> {
+    return http.patch<Category>(
+      `/api/categories/${publicId}/`,
+      data
+    );
+  },
+
+  delete(publicId: string): Promise<void> {
+    return http.delete<void>(
+      `/api/categories/${publicId}/`
     );
   },
 };

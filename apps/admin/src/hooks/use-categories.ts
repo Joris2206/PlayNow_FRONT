@@ -8,7 +8,10 @@ import {
 
 import { categoryService } from "@/services/category-service";
 
-import type { CreateCategoryRequest } from "@/types/category";
+import type {
+  CreateCategoryRequest,
+  UpdateCategoryRequest,
+} from "@/types/category";
 
 type UseCategoriesParams = {
   businessPublicId?: string;
@@ -91,6 +94,54 @@ export function useCreateCategory() {
       queryClient.invalidateQueries({
         queryKey: categoryKeys.byBusiness(
           variables.business_public_id
+        ),
+      }),
+  });
+}
+
+type UpdateCategoryVariables = {
+  publicId: string;
+  businessPublicId: string;
+  data: UpdateCategoryRequest;
+};
+
+export function useUpdateCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      publicId,
+      data,
+    }: UpdateCategoryVariables) =>
+      categoryService.update(publicId, data),
+
+    onSuccess: (_category, variables) =>
+      queryClient.invalidateQueries({
+        queryKey: categoryKeys.byBusiness(
+          variables.businessPublicId
+        ),
+      }),
+  });
+}
+
+type DeleteCategoryVariables = {
+  publicId: string;
+  businessPublicId: string;
+};
+
+export function useDeleteCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      publicId,
+    }: DeleteCategoryVariables) =>
+      categoryService.delete(publicId),
+
+    onSuccess: (_result, variables) =>
+      queryClient.invalidateQueries({
+        queryKey: categoryKeys.byBusiness(
+          variables.businessPublicId
         ),
       }),
   });
