@@ -7,7 +7,6 @@ import {
 import {
   AlertCircle,
   LoaderCircle,
-  Plus,
 } from "lucide-react";
 
 import { useAuth } from "@/providers/auth-provider";
@@ -16,10 +15,11 @@ import { useCategories } from "@/hooks/use-categories";
 import CategoriesTable from "@/components/categories/categories-table";
 import CategoriesToolbar from "@/components/categories/categories-toolbar";
 import CreateCategoryDialog from "@/components/categories/create-category-dialog";
+import ListPagination from "@/components/shared/list-pagination";
 import PageHeader from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 
-const PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = 20;
 
 export default function CategoriesPage() {
   const { activeMembership } = useAuth();
@@ -28,6 +28,9 @@ export default function CategoriesPage() {
     activeMembership?.business_public_id;
 
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(
+    DEFAULT_PAGE_SIZE
+  );
   const [searchInput, setSearchInput] =
     useState("");
   const [search, setSearch] = useState("");
@@ -46,7 +49,7 @@ export default function CategoriesPage() {
   const categoriesQuery = useCategories({
     businessPublicId,
     page,
-    pageSize: PAGE_SIZE,
+    pageSize,
     search,
   });
 
@@ -58,24 +61,18 @@ export default function CategoriesPage() {
         eyebrow="Catálogo"
         title="Categorías"
         description="Organiza los productos de tu negocio mediante categorías."
-        actions={
-          <Button
-            type="button"
-            onClick={() =>
-              setCreateDialogOpen(true)
-            }
-            disabled={!businessPublicId}
-            className="bg-red-500 text-white hover:bg-red-600"
-          >
-            <Plus className="h-4 w-4" />
-            Nueva categoría
-          </Button>
-        }
       />
 
       <CategoriesToolbar
         search={searchInput}
         onSearchChange={setSearchInput}
+        pageSize={pageSize}
+        onPageSizeChange={(nextPageSize) => {
+          setPageSize(nextPageSize);
+          setPage(1);
+        }}
+        onCreate={() => setCreateDialogOpen(true)}
+        canCreate={Boolean(businessPublicId)}
       />
 
       {categoriesQuery.isLoading && (
@@ -123,47 +120,16 @@ export default function CategoriesPage() {
             categories={data.results}
           />
 
-          <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-zinc-500">
-              {data.count} categoría
-              {data.count === 1 ? "" : "s"} en total
-            </p>
-
-            <div className="flex items-center gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={!data.previous}
-                onClick={() =>
-                  setPage((current) =>
-                    Math.max(1, current - 1)
-                  )
-                }
-                className="border-white/10 bg-transparent text-white hover:bg-white/5"
-              >
-                Anterior
-              </Button>
-
-              <span className="min-w-24 text-center text-sm text-zinc-400">
-                Página {data.current_page} de{" "}
-                {data.total_pages}
-              </span>
-
-              <Button
-                type="button"
-                variant="outline"
-                disabled={!data.next}
-                onClick={() =>
-                  setPage((current) =>
-                    current + 1
-                  )
-                }
-                className="border-white/10 bg-transparent text-white hover:bg-white/5"
-              >
-                Siguiente
-              </Button>
-            </div>
-          </div>
+          <ListPagination
+            count={data.count}
+            singularLabel="categoría"
+            pluralLabel="categorías"
+            currentPage={data.current_page}
+            totalPages={data.total_pages}
+            hasPrevious={Boolean(data.previous)}
+            hasNext={Boolean(data.next)}
+            onPageChange={setPage}
+          />
         </>
       )}
 

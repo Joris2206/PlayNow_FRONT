@@ -1,32 +1,47 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { Plus } from "lucide-react";
 
-import { Input } from "@/components/ui/input";
+import CatalogListToolbar from "@/components/shared/catalog-list-toolbar";
+import { Button } from "@/components/ui/button";
 
 type CategoriesToolbarProps = {
   search: string;
   onSearchChange: (value: string) => void;
+  pageSize: number;
+  onPageSizeChange: (value: number) => void;
+  onCreate: () => void;
+  canCreate: boolean;
 };
 
 export default function CategoriesToolbar({
   search,
   onSearchChange,
+  pageSize,
+  onPageSizeChange,
+  onCreate,
+  canCreate,
 }: CategoriesToolbarProps) {
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:flex-row sm:items-center">
-      <div className="relative flex-1">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
-
-        <Input
-          value={search}
-          onChange={(event) =>
-            onSearchChange(event.target.value)
-          }
-          placeholder="Buscar categorías..."
-          className="h-11 border-white/10 bg-zinc-950/60 pl-10 text-white placeholder:text-zinc-600"
-        />
-      </div>
-    </div>
+    <CatalogListToolbar
+      search={search}
+      onSearchChange={onSearchChange}
+      searchPlaceholder="Buscar categorías..."
+      searchLabel="Buscar categorías"
+      pageSize={pageSize}
+      onPageSizeChange={onPageSizeChange}
+      pageSizeLabel="Categorías por página"
+      actions={
+        <Button
+          type="button"
+          onClick={onCreate}
+          disabled={!canCreate}
+          className="h-11 shrink-0 bg-red-500 text-white hover:bg-red-600"
+        >
+          <Plus className="h-4 w-4" />
+          Nueva categoría
+        </Button>
+      }
+    />
   );
 }
