@@ -5,6 +5,7 @@ export type BusinessMembership = {
   business_public_id: string;
   business_name: string;
   role: UserRole;
+  employee_public_id: string | null;
 };
 
 export type AuthUser = {

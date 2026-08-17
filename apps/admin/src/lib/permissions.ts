@@ -30,12 +30,28 @@ const ADMIN_ACCESS_ROLES = {
     ROLES.SELLER,
     ROLES.VIEWER,
   ],
+  "sales-create": [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+    ROLES.CASHIER,
+    ROLES.SELLER,
+  ],
+  "sales-cancel": [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+  ],
   customers: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.CASHIER,
     ROLES.SELLER,
     ROLES.VIEWER,
+  ],
+  "customers-create": [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+    ROLES.CASHIER,
+    ROLES.SELLER,
   ],
   suppliers: [
     ROLES.OWNER,

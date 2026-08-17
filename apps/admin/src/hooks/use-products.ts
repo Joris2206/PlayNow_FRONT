@@ -78,7 +78,10 @@ export function useProducts(
 
     enabled: Boolean(businessPublicId),
 
-    placeholderData: (previousData) => previousData,
+    placeholderData: (previousData, previousQuery) =>
+      previousQuery?.queryKey[1] === businessPublicId
+        ? previousData
+        : undefined,
   });
 }
 
