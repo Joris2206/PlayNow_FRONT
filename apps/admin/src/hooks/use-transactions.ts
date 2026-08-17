@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { productKeys } from "@/hooks/use-products";
 import { stockMovementKeys } from "@/hooks/use-stock-movements";
 import { transactionService } from "@/services/transaction-service";
-import type { CreateSaleRequest, TransactionType } from "@/types/transaction";
+import type { CreatePurchaseRequest, CreateSaleRequest, TransactionType } from "@/types/transaction";
 
 type UseTransactionsParams = {
   businessPublicId?: string;
@@ -52,7 +52,7 @@ export function useTransactions(params: UseTransactionsParams) {
   });
 }
 
-function invalidateSaleEffects(queryClient: ReturnType<typeof useQueryClient>, businessPublicId: string) {
+function invalidateTransactionEffects(queryClient: ReturnType<typeof useQueryClient>, businessPublicId: string) {
   return Promise.all([
     queryClient.invalidateQueries({ queryKey: transactionKeys.byBusiness(businessPublicId) }),
     queryClient.invalidateQueries({ queryKey: productKeys.byBusiness(businessPublicId) }),
@@ -65,7 +65,7 @@ export function useCreateSale() {
   return useMutation({
     mutationFn: (data: CreateSaleRequest) => transactionService.createSale(data),
     onSuccess: (_transaction, variables) =>
-      invalidateSaleEffects(queryClient, variables.business_public_id),
+      invalidateTransactionEffects(queryClient, variables.business_public_id),
   });
 }
 
@@ -76,12 +76,38 @@ export function useCancelSale() {
   return useMutation({
     mutationFn: ({ publicId }: CancelSaleVariables) => transactionService.cancel(publicId),
     onSuccess: (_result, variables) =>
-      invalidateSaleEffects(queryClient, variables.businessPublicId),
+      invalidateTransactionEffects(queryClient, variables.businessPublicId),
   });
 }
 
 export function useRefreshSaleEffects() {
   const queryClient = useQueryClient();
   return (businessPublicId: string) =>
-    invalidateSaleEffects(queryClient, businessPublicId);
+    invalidateTransactionEffects(queryClient, businessPublicId);
+}
+
+export function useCreatePurchase() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreatePurchaseRequest) => transactionService.createPurchase(data),
+    onSuccess: (_transaction, variables) =>
+      invalidateTransactionEffects(queryClient, variables.business_public_id),
+  });
+}
+
+type CancelPurchaseVariables = { publicId: string; businessPublicId: string };
+
+export function useCancelPurchase() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ publicId }: CancelPurchaseVariables) => transactionService.cancel(publicId),
+    onSuccess: (_result, variables) =>
+      invalidateTransactionEffects(queryClient, variables.businessPublicId),
+  });
+}
+
+export function useRefreshPurchaseEffects() {
+  const queryClient = useQueryClient();
+  return (businessPublicId: string) =>
+    invalidateTransactionEffects(queryClient, businessPublicId);
 }

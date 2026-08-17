@@ -2,7 +2,7 @@ import { http } from "@/lib/http";
 import { buildQueryString } from "@/lib/query-string";
 
 import type { PaginatedResponse } from "@/types/api";
-import type { CreateSaleRequest, Transaction, TransactionListParams } from "@/types/transaction";
+import type { CreatePurchaseRequest, CreateSaleRequest, Transaction, TransactionListParams } from "@/types/transaction";
 
 export const transactionService = {
   list(params: TransactionListParams): Promise<PaginatedResponse<Transaction>> {
@@ -22,6 +22,10 @@ export const transactionService = {
   },
 
   createSale(data: CreateSaleRequest): Promise<Transaction> {
+    return http.post<Transaction>("/api/transactions/", data);
+  },
+
+  createPurchase(data: CreatePurchaseRequest): Promise<Transaction> {
     return http.post<Transaction>("/api/transactions/", data);
   },
 

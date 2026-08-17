@@ -65,3 +65,20 @@ export type CreateSaleRequest = {
   payment_status: "paid";
   details: CreateSaleDetailRequest[];
 };
+
+export type CreatePurchaseDetailRequest = {
+  product_public_id: string;
+  quantity: number;
+  unit_price: string;
+};
+
+export type CreatePurchaseRequest = {
+  business_public_id: string;
+  supplier_public_id?: string;
+  type: "purchase";
+  payment_status: "paid";
+  concept?: string;
+  invoice_number?: string;
+  invoice_series?: string;
+  details: CreatePurchaseDetailRequest[];
+};

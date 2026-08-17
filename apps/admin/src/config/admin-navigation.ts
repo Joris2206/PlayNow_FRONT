@@ -52,6 +52,12 @@ export const adminNavigation: readonly AdminNavigationItem[] = [
     access: "sales",
   },
   {
+    label: "Compras",
+    href: "/purchases",
+    icon: ReceiptText,
+    access: "purchases",
+  },
+  {
     label: "Clientes",
     href: "/customers",
     icon: Users,

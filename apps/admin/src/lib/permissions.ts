@@ -40,6 +40,23 @@ const ADMIN_ACCESS_ROLES = {
     ROLES.OWNER,
     ROLES.ADMIN,
   ],
+  purchases: [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+    ROLES.CASHIER,
+    ROLES.SELLER,
+    ROLES.INVENTORY,
+    ROLES.VIEWER,
+  ],
+  "purchases-create": [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+    ROLES.INVENTORY,
+  ],
+  "purchases-cancel": [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+  ],
   customers: [
     ROLES.OWNER,
     ROLES.ADMIN,
@@ -58,6 +75,11 @@ const ADMIN_ACCESS_ROLES = {
     ROLES.ADMIN,
     ROLES.INVENTORY,
     ROLES.VIEWER,
+  ],
+  "suppliers-create": [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+    ROLES.INVENTORY,
   ],
   debts: [
     ROLES.OWNER,
