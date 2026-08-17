@@ -136,6 +136,12 @@ domain field may still be named `title` when that is the actual API field.
 Do not show relational UUIDs/public IDs to users when an appropriate readable
 field exists.
 
+PlayNow does not use product variants. Each sellable presentation is an
+independent Product, and `Product.stock` is the only inventory source. Stock
+may be sent when creating a Product, but must not be sent in Product PUT/PATCH
+requests. Do not create frontend variant, group, SKU, or parent-child models
+without a new explicit API contract.
+
 ## Authenticated business context
 
 General business information must come from the authenticated `/api/me/`

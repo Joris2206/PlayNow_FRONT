@@ -41,7 +41,6 @@ export type UpdateProductRequest = {
   image_url?: string;
   base_price?: string;
   base_cost?: string;
-  stock?: number;
   is_visible?: boolean;
   status_public_id?: string;
 };

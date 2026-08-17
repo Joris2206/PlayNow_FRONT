@@ -30,7 +30,11 @@ import {
 import { Input } from "@/components/ui/input";
 
 import type { Category } from "@/types/category";
-import type { Product } from "@/types/product";
+import type {
+  CreateProductRequest,
+  Product,
+  UpdateProductRequest,
+} from "@/types/product";
 
 const CATEGORY_PAGE_SIZE = 20;
 
@@ -259,7 +263,7 @@ function ProductDialog({
     hasValidBasePrice &&
     hasValidBaseCost &&
     hasValidImageUrl &&
-    hasValidStock
+    (isEditing || hasValidStock)
   );
 
   const localErrors: Record<ValidatedField, string | null> = {
@@ -276,7 +280,7 @@ function ProductDialog({
     baseCost: hasValidBaseCost
       ? null
       : "Ingresa un costo válido.",
-    stock: hasValidStock
+    stock: isEditing || hasValidStock
       ? null
       : "Ingresa un stock válido.",
   };
@@ -330,7 +334,9 @@ function ProductDialog({
   const imageUrlError = visibleFieldError("imageUrl");
   const basePriceError = visibleFieldError("basePrice");
   const baseCostError = visibleFieldError("baseCost");
-  const stockError = visibleFieldError("stock");
+  const stockError = isEditing
+    ? null
+    : visibleFieldError("stock");
 
   const submitGuidance = !businessPublicId
     ? "No hay un negocio activo para guardar el producto."
@@ -340,7 +346,7 @@ function ProductDialog({
         ? "Completa los campos requeridos para guardar el producto."
         : !hasValidBasePrice ||
             !hasValidBaseCost ||
-            !hasValidStock ||
+            (!isEditing && !hasValidStock) ||
             !hasValidImageUrl
           ? "Revisa los campos marcados antes de continuar."
           : null;
@@ -417,14 +423,13 @@ function ProductDialog({
     }
 
     try {
-      const data = {
+      const updateData: UpdateProductRequest = {
         category_public_id: form.categoryPublicId,
         title,
         description: form.description.trim(),
         image_url: imageUrl,
         base_price: basePrice,
         base_cost: baseCost,
-        stock,
         is_visible: form.isVisible,
       };
 
@@ -432,13 +437,22 @@ function ProductDialog({
         await updateProduct.mutateAsync({
           publicId: product.public_id,
           businessPublicId,
-          data,
+          data: updateData,
         });
       } else {
-        await createProduct.mutateAsync({
+        const createData: CreateProductRequest = {
           business_public_id: businessPublicId,
-          ...data,
-        });
+          category_public_id: form.categoryPublicId,
+          title,
+          description: form.description.trim(),
+          image_url: imageUrl,
+          base_price: basePrice,
+          base_cost: baseCost,
+          stock,
+          is_visible: form.isVisible,
+        };
+
+        await createProduct.mutateAsync(createData);
       }
 
       resetForm();
@@ -821,41 +835,54 @@ function ProductDialog({
 
             <div className="grid gap-4 sm:grid-cols-2 sm:items-end">
               <div className="space-y-2">
-                <label
-                  htmlFor="product-stock"
-                  className="text-sm font-medium text-zinc-300"
-                >
-                  Stock
-                </label>
+                {product ? (
+                  <>
+                    <span className="text-sm font-medium text-zinc-300">
+                      Stock actual
+                    </span>
+                    <div className="flex h-11 items-center rounded-md border border-white/10 bg-white/[0.025] px-3 text-sm text-zinc-300">
+                      {product.stock}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <label
+                      htmlFor="product-stock"
+                      className="text-sm font-medium text-zinc-300"
+                    >
+                      Stock inicial
+                    </label>
 
-                <Input
-                  id="product-stock"
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={form.stock}
-                  onChange={(event) =>
-                    updateForm("stock", event.target.value)
-                  }
-                  onBlur={() => markTouched("stock")}
-                  required
-                  aria-invalid={Boolean(stockError)}
-                  aria-describedby={
-                    stockError
-                      ? "product-stock-error"
-                      : undefined
-                  }
-                  disabled={isPending}
-                  className="h-11 border-white/10 bg-white/5 text-white placeholder:text-zinc-600"
-                />
+                    <Input
+                      id="product-stock"
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={form.stock}
+                      onChange={(event) =>
+                        updateForm("stock", event.target.value)
+                      }
+                      onBlur={() => markTouched("stock")}
+                      required
+                      aria-invalid={Boolean(stockError)}
+                      aria-describedby={
+                        stockError
+                          ? "product-stock-error"
+                          : undefined
+                      }
+                      disabled={isPending}
+                      className="h-11 border-white/10 bg-white/5 text-white placeholder:text-zinc-600"
+                    />
 
-                {stockError && (
-                  <p
-                    id="product-stock-error"
-                    className="text-xs text-red-400"
-                  >
-                    {stockError}
-                  </p>
+                    {stockError && (
+                      <p
+                        id="product-stock-error"
+                        className="text-xs text-red-400"
+                      >
+                        {stockError}
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
 

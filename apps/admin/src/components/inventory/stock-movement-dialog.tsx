@@ -31,10 +31,7 @@ import {
 } from "@/components/ui/table";
 
 import type { Product } from "@/types/product";
-import type {
-  StockMovement,
-  StockMovementType,
-} from "@/types/stock-movement";
+import type { StockMovementType } from "@/types/stock-movement";
 
 const HISTORY_PAGE_SIZE = 10;
 
@@ -65,23 +62,6 @@ function formatDateTime(value: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(date);
-}
-
-function getVariantLabel(
-  movement: StockMovement
-) {
-  if (
-    movement.variant_type_name &&
-    movement.variant_name
-  ) {
-    return `${movement.variant_type_name}: ${movement.variant_name}`;
-  }
-
-  return (
-    movement.variant_name ??
-    movement.variant_type_name ??
-    "Sin variante"
-  );
 }
 
 export default function StockMovementDialog({
@@ -170,7 +150,7 @@ export default function StockMovementDialog({
               </div>
             ) : (
               <div className="overflow-hidden rounded-xl border border-white/10">
-                <Table className="min-w-[760px]">
+                <Table className="min-w-[640px]">
                   <TableHeader className="bg-white/[0.02]">
                     <TableRow className="border-white/10 hover:bg-transparent">
                       <TableHead className="px-4 text-zinc-500">
@@ -181,9 +161,6 @@ export default function StockMovementDialog({
                       </TableHead>
                       <TableHead className="px-4 text-right text-zinc-500">
                         Cantidad
-                      </TableHead>
-                      <TableHead className="px-4 text-zinc-500">
-                        Variante
                       </TableHead>
                       <TableHead className="px-4 text-zinc-500">
                         Nota
@@ -218,9 +195,6 @@ export default function StockMovementDialog({
                             ? "+"
                             : ""}
                           {movement.quantity}
-                        </TableCell>
-                        <TableCell className="px-4 text-zinc-400">
-                          {getVariantLabel(movement)}
                         </TableCell>
                         <TableCell className="max-w-xs px-4 text-zinc-400">
                           <span className="block truncate">

@@ -6,7 +6,6 @@ import {
 } from "react";
 import {
   AlertCircle,
-  Info,
   LoaderCircle,
 } from "lucide-react";
 
@@ -67,7 +66,7 @@ export default function InventoryPage() {
       <PageHeader
         eyebrow="Inventario"
         title="Existencias"
-        description="Consulta el stock base y los movimientos registrados para los productos de tu negocio."
+        description="Consulta el stock actual y los movimientos registrados para los productos de tu negocio."
       />
 
       <InventoryToolbar
@@ -84,13 +83,6 @@ export default function InventoryPage() {
           setPage(1);
         }}
       />
-
-      <div className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.025] px-4 py-3 text-sm leading-6 text-zinc-500">
-        <Info className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" />
-        <p>
-          El stock mostrado corresponde al stock base del producto. Las existencias por variante se incorporarán en una fase posterior.
-        </p>
-      </div>
 
       {productsQuery.isLoading && (
         <div className="flex min-h-80 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03]">
