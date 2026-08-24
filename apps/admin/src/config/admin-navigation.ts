@@ -1,12 +1,15 @@
 import {
   Boxes,
   CircleDollarSign,
+  CreditCard,
+  HandCoins,
   LayoutDashboard,
   Package,
   ReceiptText,
   ShoppingCart,
   Tags,
   Truck,
+  UserRoundCog,
   Users,
   WalletCards,
   type LucideIcon,
@@ -26,6 +29,7 @@ export const adminNavigation: readonly AdminNavigationItem[] = [
     label: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
+    access: "dashboard",
   },
   {
     label: "Productos",
@@ -58,6 +62,12 @@ export const adminNavigation: readonly AdminNavigationItem[] = [
     access: "purchases",
   },
   {
+    label: "Gastos",
+    href: "/expenses",
+    icon: HandCoins,
+    access: "expenses",
+  },
+  {
     label: "Clientes",
     href: "/customers",
     icon: Users,
@@ -70,10 +80,22 @@ export const adminNavigation: readonly AdminNavigationItem[] = [
     access: "suppliers",
   },
   {
+    label: "Empleados",
+    href: "/employees",
+    icon: UserRoundCog,
+    access: "employees",
+  },
+  {
     label: "Deudas",
     href: "/debts",
     icon: WalletCards,
     access: "debts",
+  },
+  {
+    label: "Métodos de pago",
+    href: "/payment-methods",
+    icon: CreditCard,
+    access: "payment-methods",
   },
   {
     label: "Caja",

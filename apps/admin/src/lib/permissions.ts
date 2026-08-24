@@ -57,6 +57,42 @@ const ADMIN_ACCESS_ROLES = {
     ROLES.OWNER,
     ROLES.ADMIN,
   ],
+  expenses: [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+    ROLES.CASHIER,
+    ROLES.SELLER,
+    ROLES.INVENTORY,
+    ROLES.VIEWER,
+  ],
+  "expenses-create": [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+  ],
+  "expenses-cancel": [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+  ],
+  "payment-methods": [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+    ROLES.CASHIER,
+    ROLES.SELLER,
+    ROLES.INVENTORY,
+    ROLES.VIEWER,
+  ],
+  "payment-methods-write": [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+  ],
+  employees: [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+  ],
+  "employees-write": [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+  ],
   customers: [
     ROLES.OWNER,
     ROLES.ADMIN,
@@ -85,17 +121,37 @@ const ADMIN_ACCESS_ROLES = {
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.CASHIER,
+    ROLES.SELLER,
     ROLES.VIEWER,
+  ],
+  "debts-pay": [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+    ROLES.CASHIER,
   ],
   cash: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.CASHIER,
   ],
-  reports: [
+  dashboard: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.VIEWER,
+  ],
+  reports: [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+    ROLES.INVENTORY,
+  ],
+  "reports-financial": [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+  ],
+  "reports-inventory": [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+    ROLES.INVENTORY,
   ],
 } as const satisfies Record<string, readonly UserRole[]>;
 

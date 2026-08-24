@@ -6,6 +6,8 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
+import { dashboardKeys } from "@/hooks/use-dashboard";
+import { reportKeys } from "@/hooks/use-reports";
 import { productService } from "@/services/product-service";
 
 import type {
@@ -93,12 +95,19 @@ export function useCreateProduct() {
       data: CreateProductRequest
     ) => productService.create(data),
 
-    onSuccess: (_product, variables) =>
+    onSuccess: (_product, variables) => Promise.all([
       queryClient.invalidateQueries({
         queryKey: productKeys.byBusiness(
           variables.business_public_id
         ),
       }),
+      queryClient.invalidateQueries({
+        queryKey: dashboardKeys.byBusiness(variables.business_public_id),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: reportKeys.inventoryScope(variables.business_public_id),
+      }),
+    ]),
   });
 }
 
@@ -118,12 +127,16 @@ export function useUpdateProduct() {
     }: UpdateProductVariables) =>
       productService.update(publicId, data),
 
-    onSuccess: (_product, variables) =>
+    onSuccess: (_product, variables) => Promise.all([
       queryClient.invalidateQueries({
         queryKey: productKeys.byBusiness(
           variables.businessPublicId
         ),
       }),
+      queryClient.invalidateQueries({
+        queryKey: reportKeys.inventoryScope(variables.businessPublicId),
+      }),
+    ]),
   });
 }
 
@@ -141,11 +154,18 @@ export function useDeleteProduct() {
     }: DeleteProductVariables) =>
       productService.delete(publicId),
 
-    onSuccess: (_result, variables) =>
+    onSuccess: (_result, variables) => Promise.all([
       queryClient.invalidateQueries({
         queryKey: productKeys.byBusiness(
           variables.businessPublicId
         ),
       }),
+      queryClient.invalidateQueries({
+        queryKey: dashboardKeys.byBusiness(variables.businessPublicId),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: reportKeys.inventoryScope(variables.businessPublicId),
+      }),
+    ]),
   });
 }

@@ -22,17 +22,25 @@ export function formatSaleDate(value: string) {
   }).format(date);
 }
 
-function toMinorUnits(value: string) {
-  const match = value.trim().match(/^(\d+)(?:\.(\d{1,2}))?/);
-  if (!match) return 0n;
+export function toMoneyMinorUnits(value: string) {
+  const match = value.trim().match(/^(\d+)(?:\.(\d{1,2}))?$/);
+  if (!match) return null;
   return BigInt(match[1]) * 100n + BigInt((match[2] ?? "").padEnd(2, "0"));
+}
+
+export function subtractMoney(minuend: string, subtrahend: string) {
+  const minuendMinor = toMoneyMinorUnits(minuend) ?? 0n;
+  const subtrahendMinor = toMoneyMinorUnits(subtrahend) ?? 0n;
+  const result = minuendMinor - subtrahendMinor;
+  const safeResult = result > 0n ? result : 0n;
+  return `${safeResult / 100n}.${String(safeResult % 100n).padStart(2, "0")}`;
 }
 
 export function calculateEstimatedTotal(
   lines: readonly { unitPrice: string; quantity: number }[]
 ) {
   const total = lines.reduce(
-    (sum, line) => sum + toMinorUnits(line.unitPrice) * BigInt(Number.isInteger(line.quantity) ? line.quantity : 0),
+    (sum, line) => sum + (toMoneyMinorUnits(line.unitPrice) ?? 0n) * BigInt(Number.isInteger(line.quantity) ? line.quantity : 0),
     0n
   );
   return `${total / 100n}.${String(total % 100n).padStart(2, "0")}`;

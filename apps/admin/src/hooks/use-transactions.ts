@@ -1,10 +1,13 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { cashRegisterKeys } from "@/hooks/cash-query-keys";
+import { dashboardKeys } from "@/hooks/use-dashboard";
 import { productKeys } from "@/hooks/use-products";
+import { reportKeys } from "@/hooks/use-reports";
 import { stockMovementKeys } from "@/hooks/use-stock-movements";
 import { transactionService } from "@/services/transaction-service";
-import type { CreatePurchaseRequest, CreateSaleRequest, TransactionType } from "@/types/transaction";
+import type { CreateExpenseRequest, CreatePurchaseRequest, CreateSaleRequest, TransactionType } from "@/types/transaction";
 
 type UseTransactionsParams = {
   businessPublicId?: string;
@@ -57,6 +60,22 @@ function invalidateTransactionEffects(queryClient: ReturnType<typeof useQueryCli
     queryClient.invalidateQueries({ queryKey: transactionKeys.byBusiness(businessPublicId) }),
     queryClient.invalidateQueries({ queryKey: productKeys.byBusiness(businessPublicId) }),
     queryClient.invalidateQueries({ queryKey: stockMovementKeys.byBusiness(businessPublicId) }),
+    queryClient.invalidateQueries({ queryKey: cashRegisterKeys.previews(businessPublicId) }),
+    queryClient.invalidateQueries({ queryKey: dashboardKeys.byBusiness(businessPublicId) }),
+    queryClient.invalidateQueries({ queryKey: reportKeys.paymentsScope(businessPublicId) }),
+    queryClient.invalidateQueries({ queryKey: reportKeys.debtsScope(businessPublicId) }),
+    queryClient.invalidateQueries({ queryKey: reportKeys.monthlyScope(businessPublicId) }),
+    queryClient.invalidateQueries({ queryKey: reportKeys.inventoryScope(businessPublicId) }),
+  ]);
+}
+
+function invalidateExpenseEffects(queryClient: ReturnType<typeof useQueryClient>, businessPublicId: string) {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: transactionKeys.byBusiness(businessPublicId) }),
+    queryClient.invalidateQueries({ queryKey: cashRegisterKeys.previews(businessPublicId) }),
+    queryClient.invalidateQueries({ queryKey: dashboardKeys.byBusiness(businessPublicId) }),
+    queryClient.invalidateQueries({ queryKey: reportKeys.paymentsScope(businessPublicId) }),
+    queryClient.invalidateQueries({ queryKey: reportKeys.monthlyScope(businessPublicId) }),
   ]);
 }
 
@@ -110,4 +129,44 @@ export function useRefreshPurchaseEffects() {
   const queryClient = useQueryClient();
   return (businessPublicId: string) =>
     invalidateTransactionEffects(queryClient, businessPublicId);
+}
+
+export function useCreateExpense() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateExpenseRequest) =>
+      transactionService.createExpense(data),
+    onSuccess: (_transaction, variables) =>
+      invalidateExpenseEffects(
+        queryClient,
+        variables.business_public_id
+      ),
+  });
+}
+
+type CancelExpenseVariables = {
+  publicId: string;
+  businessPublicId: string;
+};
+
+export function useCancelExpense() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ publicId }: CancelExpenseVariables) =>
+      transactionService.cancel(publicId),
+    onSuccess: (_result, variables) =>
+      invalidateExpenseEffects(
+        queryClient,
+        variables.businessPublicId
+      ),
+  });
+}
+
+export function useRefreshExpenseEffects() {
+  const queryClient = useQueryClient();
+
+  return (businessPublicId: string) =>
+    invalidateExpenseEffects(queryClient, businessPublicId);
 }

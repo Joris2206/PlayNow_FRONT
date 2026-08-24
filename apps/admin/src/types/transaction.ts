@@ -62,7 +62,9 @@ export type CreateSaleRequest = {
   customer_public_id?: string;
   employee_public_id: string;
   type: "sale";
-  payment_status: "paid";
+  payment_status: PaymentStatus;
+  payment_method_public_id?: string;
+  initial_paid_amount?: string;
   details: CreateSaleDetailRequest[];
 };
 
@@ -76,9 +78,22 @@ export type CreatePurchaseRequest = {
   business_public_id: string;
   supplier_public_id?: string;
   type: "purchase";
-  payment_status: "paid";
+  payment_status: PaymentStatus;
+  payment_method_public_id?: string;
+  initial_paid_amount?: string;
   concept?: string;
   invoice_number?: string;
   invoice_series?: string;
   details: CreatePurchaseDetailRequest[];
+};
+
+export type CreateExpenseRequest = {
+  business_public_id: string;
+  type: "expense";
+  payment_status: "paid";
+  payment_method_public_id: string;
+  expense_amount: string;
+  concept?: string;
+  invoice_number?: string;
+  invoice_series?: string;
 };

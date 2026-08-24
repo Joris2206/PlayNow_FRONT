@@ -47,7 +47,7 @@ export default function SalesPage() {
   const canCreate = Boolean(businessPublicId && hasAccess(activeMembership?.role, "sales-create"));
 
   return <div className="mx-auto max-w-7xl space-y-6">
-    <PageHeader eyebrow="Ventas" title="Sales" description="Registra ventas pagadas y consulta las operaciones de tu negocio." />
+    <PageHeader eyebrow="Ventas" title="Sales" description="Registra ventas pagadas, pendientes o parciales y consulta las operaciones de tu negocio." />
     <SalesToolbar search={searchInput} onSearchChange={setSearchInput} pageSize={pageSize} onPageSizeChange={(value) => { setPageSize(value); setPage(1); }} onCreate={() => setCreateOpen(true)} canCreate={canCreate} />
 
     {transactionsQuery.isLoading && <div className="flex min-h-80 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03]"><div className="flex flex-col items-center gap-4"><LoaderCircle className="h-7 w-7 animate-spin text-red-500" /><p className="text-sm text-zinc-500">Cargando ventas...</p></div></div>}

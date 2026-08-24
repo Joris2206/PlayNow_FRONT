@@ -6,22 +6,34 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCustomers } from "@/hooks/use-customers";
 import { useEmployees } from "@/hooks/use-employees";
 import { useEntityStatuses } from "@/hooks/use-entity-statuses";
+import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { productKeys, useProducts } from "@/hooks/use-products";
-import { useCreateSale } from "@/hooks/use-transactions";
+import { useCreateSale, useRefreshSaleEffects } from "@/hooks/use-transactions";
 import { findStatusByName } from "@/lib/catalog-status";
 import { HttpError } from "@/lib/http";
 import { Button } from "@/components/ui/button";
 import CreateCustomerDialog from "@/components/customers/create-customer-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { calculateEstimatedTotal, formatSaleMoney } from "@/components/sales/sales-format";
+import { calculateEstimatedTotal, formatSaleMoney, subtractMoney, toMoneyMinorUnits } from "@/components/sales/sales-format";
 import type { EmployeeOption } from "@/types/employee";
 import type { Customer } from "@/types/customer";
 import type { Product } from "@/types/product";
+import type { PaymentStatus } from "@/types/transaction";
 
 const EMPLOYEE_PAGE_SIZE = 50;
 const PRODUCT_PAGE_SIZE = 10;
 const CUSTOMER_PAGE_SIZE = 10;
+const PAYMENT_METHOD_PAGE_SIZE = 100;
+const PAYMENT_METHOD_TYPE_LABELS = { cash: "Efectivo", card: "Tarjeta", transfer: "Transferencia", other: "Otro" } as const;
+const API_FIELD_LABELS: Record<string, string> = {
+  customer_public_id: "Cliente",
+  employee_public_id: "Employee",
+  payment_method_public_id: "Método de pago",
+  payment_status: "Estado de pago",
+  initial_paid_amount: "Pago inicial",
+  details: "Detalle",
+};
 
 type SaleLine = { product: Product; quantity: string };
 type Props = {
@@ -32,19 +44,38 @@ type Props = {
   onCreated: () => void;
 };
 
+function firstString(value: unknown): string | null {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const message = firstString(item);
+      if (message) return message;
+    }
+  }
+  if (typeof value === "object" && value !== null) {
+    for (const item of Object.values(value)) {
+      const message = firstString(item);
+      if (message) return message;
+    }
+  }
+  return null;
+}
+
 function firstApiMessage(error: unknown) {
   if (!(error instanceof HttpError) || typeof error.data !== "object" || error.data === null) {
     return error instanceof Error ? error.message : "No fue posible registrar la venta.";
   }
   const data = error.data as Record<string, unknown>;
   const preferred = data.details ?? data.detail;
-  if (typeof preferred === "string") return preferred;
-  if (Array.isArray(preferred) && typeof preferred[0] === "string") return preferred[0];
-  for (const value of Object.values(data)) {
-    if (typeof value === "string") return value;
-    if (Array.isArray(value) && typeof value[0] === "string") return value[0];
+  const preferredMessage = firstString(preferred);
+  if (preferredMessage) return preferredMessage;
+  for (const [field, value] of Object.entries(data)) {
+    const message = firstString(value);
+    if (message) return `${API_FIELD_LABELS[field] ?? field}: ${message}`;
   }
-  return error.message;
+  if (error.status === 403) return "No tienes permisos para registrar esta venta.";
+  if (error.status === 404) return "Uno de los recursos seleccionados ya no está disponible para este negocio.";
+  return error.status === 409 ? "La operación cambió mientras registrabas la venta. Revisa los datos e inténtalo nuevamente." : error.message;
 }
 
 export default function CreateSaleDialog({ businessPublicId, initialEmployeePublicId, open, onOpenChange, onCreated }: Props) {
@@ -62,16 +93,21 @@ export default function CreateSaleDialog({ businessPublicId, initialEmployeePubl
   const [productSearchInput, setProductSearchInput] = useState("");
   const [productSearch, setProductSearch] = useState("");
   const [lines, setLines] = useState<SaleLine[]>([]);
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("paid");
+  const [paymentMethodPublicId, setPaymentMethodPublicId] = useState("");
+  const [initialPaidAmount, setInitialPaidAmount] = useState("");
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
   const [touchedQuantities, setTouchedQuantities] = useState<Record<string, boolean>>({});
   const createSale = useCreateSale();
+  const refreshSaleEffects = useRefreshSaleEffects();
   const resetCreateSale = createSale.reset;
   const statusesQuery = useEntityStatuses(open);
   const activeStatus = findStatusByName(statusesQuery.data?.results ?? [], "Activo");
 
-  const employeesQuery = useEmployees({ businessPublicId: open ? businessPublicId : undefined, page: employeePage, pageSize: EMPLOYEE_PAGE_SIZE });
+  const employeesQuery = useEmployees({ businessPublicId: open && activeStatus ? businessPublicId : undefined, page: employeePage, pageSize: EMPLOYEE_PAGE_SIZE, ordering: "full_name", statusPublicId: activeStatus?.public_id });
   const customersQuery = useCustomers({ businessPublicId: open ? businessPublicId : undefined, page: customerPage, pageSize: CUSTOMER_PAGE_SIZE, search: customerSearch, ordering: "full_name" });
   const productsQuery = useProducts({ businessPublicId: open && activeStatus ? businessPublicId : undefined, page: productPage, pageSize: PRODUCT_PAGE_SIZE, search: productSearch, statusPublicId: activeStatus?.public_id });
+  const paymentMethodsQuery = usePaymentMethods({ businessPublicId: open ? businessPublicId : undefined, page: 1, pageSize: PAYMENT_METHOD_PAGE_SIZE, ordering: "name" });
 
   useEffect(() => {
     const timeout = setTimeout(() => { setProductSearch(productSearchInput.trim()); setProductPage(1); }, 400);
@@ -101,6 +137,9 @@ export default function CreateSaleDialog({ businessPublicId, initialEmployeePubl
     setProductSearchInput("");
     setProductSearch("");
     setLines([]);
+    setPaymentStatus("paid");
+    setPaymentMethodPublicId("");
+    setInitialPaidAmount("");
     setAttemptedSubmit(false);
     setTouchedQuantities({});
     resetCreateSale();
@@ -155,8 +194,35 @@ export default function CreateSaleDialog({ businessPublicId, initialEmployeePubl
     return !line.quantity || !Number.isInteger(quantity) || quantity < 1 || quantity > line.product.stock;
   });
   const estimatedTotal = calculateEstimatedTotal(lines.map((line) => ({ unitPrice: line.product.base_price, quantity: Number(line.quantity) })));
-  const canSubmit = Boolean(businessPublicId && employeePublicId && lines.length > 0 && invalidLines.length === 0);
-  const guidance = !businessPublicId ? "No hay un negocio activo para registrar la venta." : !employeePublicId ? "Selecciona el Employee responsable de la venta." : lines.length === 0 ? "Agrega al menos un producto." : invalidLines.length > 0 ? "Corrige las cantidades antes de registrar la venta." : null;
+  const estimatedTotalMinor = toMoneyMinorUnits(estimatedTotal) ?? 0n;
+  const hasPositiveTotal = estimatedTotalMinor > 0n;
+  const requiresCustomer = hasPositiveTotal && (paymentStatus === "pending" || paymentStatus === "partial");
+  const requiresPaymentMethod = hasPositiveTotal && (paymentStatus === "paid" || paymentStatus === "partial");
+  const initialPaidMinor = toMoneyMinorUnits(initialPaidAmount);
+  const validInitialPaidAmount = paymentStatus !== "partial" || (initialPaidMinor !== null && initialPaidMinor > 0n && initialPaidMinor < estimatedTotalMinor);
+  const estimatedBalance = subtractMoney(estimatedTotal, initialPaidAmount);
+  const canSubmit = Boolean(businessPublicId && employeePublicId && lines.length > 0 && invalidLines.length === 0 && (!requiresCustomer || customerPublicId) && (!requiresPaymentMethod || paymentMethodPublicId) && validInitialPaidAmount);
+  const guidance = !businessPublicId ? "No hay un negocio activo para registrar la venta." : !employeePublicId ? "Selecciona el Employee responsable de la venta." : lines.length === 0 ? "Agrega al menos un producto." : invalidLines.length > 0 ? "Corrige las cantidades antes de registrar la venta." : requiresCustomer && !customerPublicId ? "La venta pendiente o parcial necesita un cliente." : requiresPaymentMethod && !paymentMethodPublicId ? "Selecciona el método de pago." : !validInitialPaidAmount ? "El pago inicial debe ser mayor que cero y menor que el total estimado." : null;
+
+  useEffect(() => {
+    if (hasPositiveTotal) return;
+    setPaymentStatus("paid");
+    setPaymentMethodPublicId("");
+    setInitialPaidAmount("");
+  }, [hasPositiveTotal]);
+
+  useEffect(() => {
+    if (!paymentMethodPublicId || !paymentMethodsQuery.isSuccess) return;
+    if (!paymentMethodsQuery.data.results.some((method) => method.public_id === paymentMethodPublicId)) {
+      setPaymentMethodPublicId("");
+    }
+  }, [paymentMethodPublicId, paymentMethodsQuery.data, paymentMethodsQuery.isSuccess]);
+
+  function changePaymentStatus(status: PaymentStatus) {
+    setPaymentStatus(status);
+    if (status === "pending") setPaymentMethodPublicId("");
+    if (status !== "partial") setInitialPaidAmount("");
+  }
 
   function addProduct(product: Product) {
     if (product.stock <= 0 || lines.some((line) => line.product.public_id === product.public_id)) return;
@@ -179,7 +245,9 @@ export default function CreateSaleDialog({ businessPublicId, initialEmployeePubl
         ...(customerPublicId ? { customer_public_id: customerPublicId } : {}),
         employee_public_id: employeePublicId,
         type: "sale",
-        payment_status: "paid",
+        payment_status: paymentStatus,
+        ...(requiresPaymentMethod ? { payment_method_public_id: paymentMethodPublicId } : {}),
+        ...(paymentStatus === "partial" ? { initial_paid_amount: initialPaidAmount } : {}),
         details: lines.map((line) => ({ product_public_id: line.product.public_id, quantity: Number(line.quantity) })),
       });
       onCreated();
@@ -189,6 +257,7 @@ export default function CreateSaleDialog({ businessPublicId, initialEmployeePubl
       if (error instanceof HttpError && error.status === 400 && message.includes("stock") && message.includes("insuficiente")) {
         await queryClient.invalidateQueries({ queryKey: productKeys.byBusiness(businessPublicId) });
       }
+      if (error instanceof HttpError && error.status === 409) await refreshSaleEffects(businessPublicId);
     }
   }
 
@@ -196,7 +265,7 @@ export default function CreateSaleDialog({ businessPublicId, initialEmployeePubl
 
   return <Dialog open={open} onOpenChange={(nextOpen) => nextOpen ? onOpenChange(true) : resetAndClose()}>
     <DialogContent className="max-h-[92vh] overflow-y-auto border-white/10 bg-zinc-950 text-white sm:max-w-5xl">
-      <DialogHeader><DialogTitle>Nueva venta</DialogTitle><DialogDescription className="text-zinc-500">Registra una venta pagada. El precio y el stock definitivos serán validados por PlayNow API.</DialogDescription></DialogHeader>
+      <DialogHeader><DialogTitle>Nueva venta</DialogTitle><DialogDescription className="text-zinc-500">Registra una venta pagada, pendiente o parcial. El total y el stock definitivos serán validados por PlayNow API.</DialogDescription></DialogHeader>
       <form onSubmit={handleSubmit} className="space-y-6">
         <section className="space-y-2">
           <label htmlFor="sale-employee" className="text-sm font-medium text-zinc-300">Employee responsable</label>
@@ -207,6 +276,8 @@ export default function CreateSaleDialog({ businessPublicId, initialEmployeePubl
           </select>
           {attemptedSubmit && !employeePublicId && <p id="sale-employee-error" className="text-xs text-red-400">Selecciona el Employee responsable.</p>}
           {employeesQuery.isError && <p role="alert" className="text-sm text-red-300">No fue posible cargar los Employees.</p>}
+          {statusesQuery.isError && <p role="alert" className="text-sm text-red-300">No fue posible resolver el estado Activo de los Employees.</p>}
+          {statusesQuery.isSuccess && !activeStatus && <p role="alert" className="text-sm text-amber-300">No existe el estado Activo necesario para consultar Employees.</p>}
           {employeesQuery.data && employeesQuery.data.total_pages > 1 && <div className="flex items-center justify-end gap-2"><Button type="button" size="sm" variant="outline" disabled={!employeesQuery.data.previous || createSale.isPending} onClick={() => setEmployeePage((page) => Math.max(1, page - 1))} className="border-white/10 bg-transparent text-zinc-300">Anterior</Button><span className="text-xs text-zinc-500">Página {employeesQuery.data.current_page} de {employeesQuery.data.total_pages}</span><Button type="button" size="sm" variant="outline" disabled={!employeesQuery.data.next || createSale.isPending} onClick={() => setEmployeePage((page) => page + 1)} className="border-white/10 bg-transparent text-zinc-300">Siguiente</Button></div>}
         </section>
 
@@ -214,9 +285,9 @@ export default function CreateSaleDialog({ businessPublicId, initialEmployeePubl
           <div className="flex items-center justify-between gap-3">
             <div>
               <label htmlFor="sale-customer" className="text-sm font-medium text-zinc-300">
-                Cliente (opcional)
+                Cliente {requiresCustomer ? "(obligatorio)" : "(opcional)"}
               </label>
-              <p className="mt-1 text-xs text-zinc-500">Puedes registrar la venta sin cliente.</p>
+              <p className="mt-1 text-xs text-zinc-500">{requiresCustomer ? "Las ventas pendientes o parciales requieren cliente." : "Puedes registrar la venta pagada sin cliente."}</p>
             </div>
             <Button
               type="button"
@@ -255,6 +326,7 @@ export default function CreateSaleDialog({ businessPublicId, initialEmployeePubl
               );
             }}
             disabled={customersQuery.isLoading || createSale.isPending}
+            aria-invalid={attemptedSubmit && requiresCustomer && !customerPublicId}
             className="h-11 w-full rounded-md border border-white/10 bg-zinc-950 px-3 text-sm text-white outline-none focus:border-red-500 focus:ring-3 focus:ring-red-500/20 disabled:opacity-50"
           >
             <option value="">Sin cliente</option>
@@ -264,6 +336,7 @@ export default function CreateSaleDialog({ businessPublicId, initialEmployeePubl
               </option>
             ))}
           </select>
+          {attemptedSubmit && requiresCustomer && !customerPublicId && <p className="text-xs text-red-400">Selecciona un cliente para la venta pendiente o parcial.</p>}
 
           {customersQuery.isError && (
             <div className="flex items-center justify-between gap-3 text-sm text-red-300">
@@ -301,7 +374,12 @@ export default function CreateSaleDialog({ businessPublicId, initialEmployeePubl
           {lines.length === 0 ? <div className="rounded-xl border border-dashed border-white/10 px-4 py-8 text-center text-sm text-zinc-500">Todavía no agregaste productos.</div> : <div className="space-y-2">{lines.map((line) => { const quantity = Number(line.quantity); const invalid = !line.quantity || !Number.isInteger(quantity) || quantity < 1 || quantity > line.product.stock; const showError = invalid && (attemptedSubmit || touchedQuantities[line.product.public_id]); return <div key={line.product.public_id} className="grid gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-3 sm:grid-cols-[minmax(0,1fr)_120px_140px_44px] sm:items-center"><div className="min-w-0"><p className="truncate text-sm font-medium text-white">{line.product.title}</p><p className="text-xs text-zinc-500">{formatSaleMoney(line.product.base_price)} · Stock: {line.product.stock}</p></div><div><Input type="text" inputMode="numeric" pattern="[0-9]*" value={line.quantity} onChange={(event) => { const digits = event.target.value.replace(/\D/g, ""); const normalized = digits.replace(/^0+(?=\d)/, ""); setLines((current) => current.map((item) => item.product.public_id === line.product.public_id ? { ...item, quantity: normalized } : item)); }} onBlur={() => setTouchedQuantities((current) => ({ ...current, [line.product.public_id]: true }))} aria-label={`Cantidad de ${line.product.title}`} aria-invalid={showError} aria-describedby={showError ? `quantity-${line.product.public_id}-error` : undefined} className="border-white/10 bg-black/30 text-white" />{showError && <p id={`quantity-${line.product.public_id}-error`} className="mt-1 text-xs text-red-400">Usa un entero entre 1 y {line.product.stock}.</p>}</div><p className="text-right text-sm font-medium text-white">{formatSaleMoney(calculateEstimatedTotal([{ unitPrice: line.product.base_price, quantity }]))}</p><Button type="button" variant="ghost" size="icon" onClick={() => setLines((current) => current.filter((item) => item.product.public_id !== line.product.public_id))} aria-label={`Retirar ${line.product.title}`} className="text-zinc-500 hover:text-red-400"><Trash2 className="h-4 w-4" /></Button></div>; })}</div>}
         </section>
 
-        <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] p-4"><span className="text-sm text-zinc-400">Total estimado</span><strong className="text-xl text-white">{formatSaleMoney(estimatedTotal)}</strong></div>
+        <section className="space-y-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+          <div className="flex items-center justify-between"><span className="text-sm text-zinc-400">Total estimado</span><strong className="text-xl text-white">{formatSaleMoney(estimatedTotal)}</strong></div>
+          <div className="space-y-2"><label htmlFor="sale-payment-status" className="text-sm font-medium text-zinc-300">Estado de pago</label><select id="sale-payment-status" value={paymentStatus} onChange={(event) => changePaymentStatus(event.target.value as PaymentStatus)} disabled={!hasPositiveTotal || createSale.isPending} className="h-11 w-full rounded-md border border-white/10 bg-zinc-950 px-3 text-sm text-white outline-none focus:border-red-500 focus:ring-3 focus:ring-red-500/20 disabled:opacity-50"><option value="paid">Pagado</option><option value="pending">Pendiente</option><option value="partial">Parcial</option></select>{!hasPositiveTotal && <p className="text-xs text-zinc-500">Con total estimado cero, la operación solo puede registrarse como pagada y sin método de pago.</p>}</div>
+          {requiresPaymentMethod && <div className="space-y-2"><label htmlFor="sale-payment-method" className="text-sm font-medium text-zinc-300">Método de pago</label><select id="sale-payment-method" value={paymentMethodPublicId} onChange={(event) => setPaymentMethodPublicId(event.target.value)} disabled={paymentMethodsQuery.isLoading || createSale.isPending} aria-invalid={attemptedSubmit && !paymentMethodPublicId} className="h-11 w-full rounded-md border border-white/10 bg-zinc-950 px-3 text-sm text-white outline-none focus:border-red-500 focus:ring-3 focus:ring-red-500/20 disabled:opacity-50"><option value="">{paymentMethodsQuery.isLoading ? "Cargando métodos..." : "Selecciona un método"}</option>{paymentMethodsQuery.data?.results.map((method) => <option key={method.public_id} value={method.public_id}>{method.name} · {PAYMENT_METHOD_TYPE_LABELS[method.method_type]}</option>)}</select>{attemptedSubmit && !paymentMethodPublicId && <p className="text-xs text-red-400">Selecciona un método de pago.</p>}{paymentMethodsQuery.isError && <div className="flex items-center justify-between gap-3 text-sm text-red-300"><span>No fue posible cargar los métodos de pago.</span><Button type="button" variant="ghost" size="sm" onClick={() => paymentMethodsQuery.refetch()}>Reintentar</Button></div>}</div>}
+          {paymentStatus === "partial" && hasPositiveTotal && <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><label htmlFor="sale-initial-paid-amount" className="text-sm font-medium text-zinc-300">Importe pagado inicialmente</label><Input id="sale-initial-paid-amount" type="text" inputMode="decimal" value={initialPaidAmount} onChange={(event) => { const value = event.target.value; if (/^\d*(?:\.\d{0,2})?$/.test(value)) setInitialPaidAmount(value); }} disabled={createSale.isPending} aria-invalid={attemptedSubmit && !validInitialPaidAmount} className="border-white/10 bg-black/30 text-white" />{attemptedSubmit && !validInitialPaidAmount && <p className="text-xs text-red-400">Debe ser mayor que cero y menor que el total estimado.</p>}</div><div className="flex items-center justify-between rounded-lg border border-white/10 bg-black/20 px-4"><span className="text-sm text-zinc-400">Saldo estimado</span><strong className="text-white">{formatSaleMoney(estimatedBalance)}</strong></div></div>}
+        </section>
         {errorMessage && <div role="alert" className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">{errorMessage}</div>}
         {!createSale.isPending && guidance && <p className="text-sm text-zinc-400" aria-live="polite">{guidance}</p>}
         <DialogFooter><Button type="button" variant="outline" onClick={resetAndClose} disabled={createSale.isPending} className="border-white/10 bg-transparent text-white">Cancelar</Button><Button type="submit" disabled={!canSubmit || createSale.isPending} className="bg-red-500 text-white hover:bg-red-600">{createSale.isPending ? <><LoaderCircle className="h-4 w-4 animate-spin" />Registrando...</> : "Registrar venta"}</Button></DialogFooter>

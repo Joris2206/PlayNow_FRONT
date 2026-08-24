@@ -31,7 +31,7 @@ export default function PurchasesPage() {
   const canCreate = Boolean(businessPublicId && hasAccess(activeMembership?.role, "purchases-create"));
 
   return <div className="mx-auto max-w-7xl space-y-6">
-    <PageHeader eyebrow="Compras" title="Purchases" description="Registra compras pagadas y consulta las entradas de inventario de tu negocio." />
+    <PageHeader eyebrow="Compras" title="Purchases" description="Registra compras pagadas, pendientes o parciales y consulta las entradas de inventario de tu negocio." />
     <PurchasesToolbar search={searchInput} onSearchChange={setSearchInput} pageSize={pageSize} onPageSizeChange={(value) => { setPageSize(value); setPage(1); }} onCreate={() => setCreateOpen(true)} canCreate={canCreate} />
     {transactionsQuery.isLoading && <div className="flex min-h-80 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03]"><div className="flex flex-col items-center gap-4"><LoaderCircle className="h-7 w-7 animate-spin text-red-500" /><p className="text-sm text-zinc-500">Cargando compras...</p></div></div>}
     {transactionsQuery.isError && <div className="flex min-h-56 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/5 px-6"><div className="text-center"><AlertCircle className="mx-auto h-7 w-7 text-red-400" /><h3 className="mt-4 font-medium text-white">No pudimos cargar las compras</h3><p className="mt-2 text-sm text-zinc-500">Verifica tu conexión e intenta nuevamente.</p><Button type="button" variant="outline" onClick={() => transactionsQuery.refetch()} className="mt-5 border-white/10 bg-transparent text-white hover:bg-white/5">Reintentar</Button></div></div>}
