@@ -67,7 +67,7 @@ export default function ExpensesTable({
     <>
       <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
         <div className="overflow-x-auto">
-          <Table className="min-w-[1040px]">
+          <Table stickyHeader className="min-w-[1040px]">
             <TableHeader className="border-b border-white/10 bg-white/[0.02]">
               <TableRow className="border-white/10 hover:bg-transparent">
                 <TableHead className="px-5 text-zinc-500">Fecha</TableHead>

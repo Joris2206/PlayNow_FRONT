@@ -10,7 +10,6 @@ import {
   Plus,
 } from "lucide-react";
 
-import { useCategories } from "@/hooks/use-categories";
 import {
   useCreateProduct,
   useUpdateProduct,
@@ -18,6 +17,7 @@ import {
 import { HttpError } from "@/lib/http";
 
 import CreateCategoryDialog from "@/components/categories/create-category-dialog";
+import ProductCategorySelectorDialog from "@/components/products/product-category-selector-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -35,8 +35,6 @@ import type {
   Product,
   UpdateProductRequest,
 } from "@/types/product";
-
-const CATEGORY_PAGE_SIZE = 20;
 
 type CreateProductDialogProps = {
   businessPublicId?: string;
@@ -93,6 +91,15 @@ function getInitialFormState(
     stock: String(product?.stock ?? 0),
     isVisible: product?.is_visible ?? true,
   };
+}
+
+function getProductForBusiness(
+  product: Product | undefined,
+  businessPublicId: string | undefined
+) {
+  return product?.business_public_id === businessPublicId
+    ? product
+    : undefined;
 }
 
 function getApiFieldError(
@@ -171,19 +178,30 @@ function ProductDialog({
   onOpenChange,
   onCompleted,
 }: ProductDialogProps) {
-  const [form, setForm] = useState<ProductFormState>(
-    getInitialFormState(product)
+  const initialProduct = getProductForBusiness(
+    product,
+    businessPublicId
   );
-  const [categoryDialogOpen, setCategoryDialogOpen] =
+  const [form, setForm] = useState<ProductFormState>(
+    getInitialFormState(initialProduct)
+  );
+  const [createCategoryDialogOpen, setCreateCategoryDialogOpen] =
     useState(false);
-  const [categoryPage, setCategoryPage] =
-    useState(1);
+  const [categorySelectorOpen, setCategorySelectorOpen] =
+    useState(false);
   const [selectedCategory, setSelectedCategory] =
-    useState<Pick<Category, "public_id" | "name"> | null>(
-      product
+    useState<
+      Pick<
+        Category,
+        "public_id" | "business_public_id" | "name"
+      > | null
+    >(
+      initialProduct
         ? {
-            public_id: product.category_public_id,
-            name: product.category_name,
+            public_id: initialProduct.category_public_id,
+            business_public_id:
+              initialProduct.business_public_id,
+            name: initialProduct.category_name,
           }
         : null
     );
@@ -191,11 +209,6 @@ function ProductDialog({
     Partial<Record<ValidatedField, boolean>>
   >({});
 
-  const categoriesQuery = useCategories({
-    businessPublicId,
-    page: categoryPage,
-    pageSize: CATEGORY_PAGE_SIZE,
-  });
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const isEditing = Boolean(product);
@@ -211,32 +224,38 @@ function ProductDialog({
       return;
     }
 
-    setForm(getInitialFormState(product));
-    setCategoryPage(1);
+    const currentProduct = getProductForBusiness(
+      product,
+      businessPublicId
+    );
+
+    setForm(getInitialFormState(currentProduct));
     setSelectedCategory(
-      product
+      currentProduct
         ? {
-            public_id: product.category_public_id,
-            name: product.category_name,
+            public_id: currentProduct.category_public_id,
+            business_public_id:
+              currentProduct.business_public_id,
+            name: currentProduct.category_name,
           }
         : null
     );
     setTouchedFields({});
     createProduct.reset();
     updateProduct.reset();
-  }, [open, product]);
-
-  const listedCategories =
-    categoriesQuery.data?.results ?? [];
-  const categories = selectedCategory &&
-    !listedCategories.some(
-      (category) =>
-        category.public_id === selectedCategory.public_id
-    )
-      ? [selectedCategory, ...listedCategories]
-      : listedCategories;
+  }, [open, product, businessPublicId]);
 
   const title = form.title.trim();
+  const selectedCategoryForBusiness =
+    selectedCategory?.business_public_id ===
+    businessPublicId
+      ? selectedCategory
+      : null;
+  const hasCategoryForBusiness = Boolean(
+    selectedCategoryForBusiness &&
+      selectedCategoryForBusiness.public_id ===
+        form.categoryPublicId
+  );
   const basePrice = form.basePrice.trim();
   const baseCost = form.baseCost.trim();
   const imageUrl = form.imageUrl.trim();
@@ -258,7 +277,7 @@ function ProductDialog({
   const hasValidImageUrl = isValidUrl(imageUrl);
   const canSubmit = Boolean(
     businessPublicId &&
-    form.categoryPublicId &&
+    hasCategoryForBusiness &&
     title &&
     hasValidBasePrice &&
     hasValidBaseCost &&
@@ -267,7 +286,7 @@ function ProductDialog({
   );
 
   const localErrors: Record<ValidatedField, string | null> = {
-    categoryPublicId: form.categoryPublicId
+    categoryPublicId: hasCategoryForBusiness
       ? null
       : "Selecciona una categoría.",
     title: title ? null : "Ingresa un título.",
@@ -340,7 +359,7 @@ function ProductDialog({
 
   const submitGuidance = !businessPublicId
     ? "No hay un negocio activo para guardar el producto."
-    : !form.categoryPublicId
+    : !hasCategoryForBusiness
       ? "Selecciona una categoría para continuar."
       : !title || !basePrice || !baseCost
         ? "Completa los campos requeridos para guardar el producto."
@@ -375,7 +394,6 @@ function ProductDialog({
 
   function resetForm() {
     setForm(getInitialFormState(product));
-    setCategoryPage(1);
     setSelectedCategory(null);
     setTouchedFields({});
     createProduct.reset();
@@ -397,16 +415,13 @@ function ProductDialog({
   function handleCategoryCreated(category: Category) {
     setSelectedCategory(category);
     updateForm("categoryPublicId", category.public_id);
+    markTouched("categoryPublicId");
   }
 
-  function handleCategoryChange(publicId: string) {
-    updateForm("categoryPublicId", publicId);
-
-    setSelectedCategory(
-      categories.find(
-        (category) => category.public_id === publicId
-      ) ?? null
-    );
+  function handleCategorySelect(category: Category) {
+    setSelectedCategory(category);
+    updateForm("categoryPublicId", category.public_id);
+    markTouched("categoryPublicId");
   }
 
   async function handleSubmit(
@@ -506,21 +521,18 @@ function ProductDialog({
           >
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-3">
-                <label
-                  htmlFor="product-category"
-                  className="text-sm font-medium text-zinc-300"
-                >
+                <span className="text-sm font-medium text-zinc-300">
                   Categoría
-                </label>
+                </span>
 
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   onClick={() =>
-                    setCategoryDialogOpen(true)
+                    setCreateCategoryDialogOpen(true)
                   }
-                  disabled={!businessPublicId}
+                  disabled={!businessPublicId || isPending}
                   className="text-red-400 hover:bg-red-500/10 hover:text-red-300"
                 >
                   <Plus className="h-4 w-4" />
@@ -528,44 +540,74 @@ function ProductDialog({
                 </Button>
               </div>
 
-              <select
+              <div
                 id="product-category"
-                value={form.categoryPublicId}
-                onChange={(event) => {
-                  markTouched("categoryPublicId");
-                  handleCategoryChange(event.target.value);
-                }}
-                onBlur={() =>
-                  markTouched("categoryPublicId")
-                }
-                required
                 aria-invalid={Boolean(categoryError)}
                 aria-describedby={
                   categoryError
                     ? "product-category-error"
                     : undefined
                 }
-                disabled={
-                  categoriesQuery.isLoading ||
-                  isPending
-                }
-                className="h-11 w-full rounded-md border border-white/10 bg-zinc-950 px-3 text-sm text-white outline-none transition focus:border-red-500 focus:ring-3 focus:ring-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                className={`flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between ${
+                  categoryError
+                    ? "border-red-500/50 bg-red-500/5"
+                    : selectedCategoryForBusiness
+                      ? "border-white/10 bg-white/[0.02]"
+                      : "border-dashed border-white/10 bg-white/[0.02]"
+                }`}
               >
-                <option value="">
-                  {categoriesQuery.isLoading
-                    ? "Cargando categorías..."
-                    : "Selecciona una categoría"}
-                </option>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                    {selectedCategoryForBusiness
+                      ? "Categoría seleccionada"
+                      : "Sin categoría seleccionada"}
+                  </p>
+                  {selectedCategoryForBusiness && (
+                    <p className="mt-1 truncate text-sm font-medium text-white">
+                      {selectedCategoryForBusiness.name}
+                    </p>
+                  )}
+                </div>
 
-                {categories.map((category) => (
-                  <option
-                    key={category.public_id}
-                    value={category.public_id}
+                <div className="flex flex-wrap gap-2 sm:justify-end">
+                  <Button
+                    type="button"
+                    variant="inverseOutline"
+                    size={
+                      selectedCategoryForBusiness
+                        ? "sm"
+                        : "default"
+                    }
+                    onClick={() => {
+                      markTouched("categoryPublicId");
+                      setCategorySelectorOpen(true);
+                    }}
+                    disabled={!businessPublicId || isPending}
                   >
-                    {category.name}
-                  </option>
-                ))}
-              </select>
+                    {selectedCategoryForBusiness
+                      ? "Cambiar"
+                      : "Seleccionar categoría"}
+                  </Button>
+
+                  {selectedCategoryForBusiness && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedCategory(null);
+                        updateForm("categoryPublicId", "");
+                        markTouched("categoryPublicId");
+                      }}
+                      disabled={isPending}
+                      aria-label={`Quitar la categoría ${selectedCategoryForBusiness.name} del producto`}
+                      className="text-zinc-400 hover:bg-white/5 hover:text-white"
+                    >
+                      Quitar
+                    </Button>
+                  )}
+                </div>
+              </div>
 
               {categoryError && (
                 <p
@@ -576,71 +618,6 @@ function ProductDialog({
                 </p>
               )}
 
-              {categoriesQuery.data &&
-                categoriesQuery.data.total_pages > 1 && (
-                  <div className="flex items-center justify-end gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={
-                        !categoriesQuery.data.previous ||
-                        isPending
-                      }
-                      onClick={() =>
-                        setCategoryPage((current) =>
-                          Math.max(1, current - 1)
-                        )
-                      }
-                      className="border-white/10 bg-transparent text-zinc-300 hover:bg-white/5 hover:text-white"
-                    >
-                      Anterior
-                    </Button>
-
-                    <span className="text-xs text-zinc-500">
-                      Página {categoriesQuery.data.current_page} de{" "}
-                      {categoriesQuery.data.total_pages}
-                    </span>
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={
-                        !categoriesQuery.data.next ||
-                        isPending
-                      }
-                      onClick={() =>
-                        setCategoryPage((current) =>
-                          current + 1
-                        )
-                      }
-                      className="border-white/10 bg-transparent text-zinc-300 hover:bg-white/5 hover:text-white"
-                    >
-                      Siguiente
-                    </Button>
-                  </div>
-                )}
-
-              {categoriesQuery.isError && (
-                <div className="flex items-center justify-between gap-3 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-300">
-                  <span>
-                    No fue posible cargar las categorías.
-                  </span>
-
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      categoriesQuery.refetch()
-                    }
-                    className="text-red-300 hover:bg-red-500/10 hover:text-red-200"
-                  >
-                    Reintentar
-                  </Button>
-                </div>
-              )}
             </div>
 
             <div className="space-y-2">
@@ -956,10 +933,19 @@ function ProductDialog({
         </DialogContent>
       </Dialog>
 
+      <ProductCategorySelectorDialog
+        businessPublicId={businessPublicId}
+        selectedCategory={selectedCategoryForBusiness}
+        open={categorySelectorOpen}
+        disabled={isPending}
+        onOpenChange={setCategorySelectorOpen}
+        onSelect={handleCategorySelect}
+      />
+
       <CreateCategoryDialog
         businessPublicId={businessPublicId}
-        open={categoryDialogOpen}
-        onOpenChange={setCategoryDialogOpen}
+        open={createCategoryDialogOpen}
+        onOpenChange={setCreateCategoryDialogOpen}
         onCreated={handleCategoryCreated}
       />
     </>

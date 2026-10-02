@@ -12,6 +12,7 @@ import {
 
 import { useStockMovements } from "@/hooks/use-stock-movements";
 
+import { getStockMovementOriginCopy } from "@/components/inventory/stock-movement-origin";
 import ListPagination from "@/components/shared/list-pagination";
 import { Button } from "@/components/ui/button";
 import {
@@ -163,17 +164,23 @@ export default function StockMovementDialog({
                         Cantidad
                       </TableHead>
                       <TableHead className="px-4 text-zinc-500">
-                        Nota
+                        Origen
                       </TableHead>
                     </TableRow>
                   </TableHeader>
 
                   <TableBody>
-                    {data.results.map((movement) => (
-                      <TableRow
-                        key={movement.public_id}
-                        className="border-white/10 hover:bg-white/[0.025]"
-                      >
+                    {data.results.map((movement) => {
+                      const origin = getStockMovementOriginCopy(
+                        movement.origin_type,
+                        movement.is_reversal
+                      );
+
+                      return (
+                        <TableRow
+                          key={movement.public_id}
+                          className="border-white/10 hover:bg-white/[0.025]"
+                        >
                         <TableCell className="px-4 text-zinc-300">
                           {formatDateTime(
                             movement.created_at
@@ -196,13 +203,17 @@ export default function StockMovementDialog({
                             : ""}
                           {movement.quantity}
                         </TableCell>
-                        <TableCell className="max-w-xs px-4 text-zinc-400">
-                          <span className="block truncate">
-                            {movement.note || "Sin nota"}
-                          </span>
+                        <TableCell className="max-w-xs whitespace-normal px-4 py-3">
+                          <p className="font-medium text-zinc-200">
+                            {origin.title}
+                          </p>
+                          <p className="mt-1 text-xs leading-5 text-zinc-500">
+                            {origin.description}
+                          </p>
                         </TableCell>
-                      </TableRow>
-                    ))}
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>

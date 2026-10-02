@@ -153,6 +153,10 @@ const ADMIN_ACCESS_ROLES = {
     ROLES.ADMIN,
     ROLES.INVENTORY,
   ],
+  commissions: [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+  ],
 } as const satisfies Record<string, readonly UserRole[]>;
 
 export type AdminAccessPolicy =

@@ -180,11 +180,9 @@ export default function CreateExpenseDialog({
     ? "No hay un negocio activo para registrar el gasto."
     : missingActiveStatus
       ? "No existe el estado Activo necesario para consultar métodos de pago."
-      : !isAmountValid
-        ? "Indica un importe válido entre 0.01 y 9999999999.99."
-        : !paymentMethodPublicId
-          ? "Selecciona un método de pago activo."
-          : null;
+      : isAmountValid && !paymentMethodPublicId
+        ? "Selecciona un método de pago activo."
+        : null;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -192,7 +190,7 @@ export default function CreateExpenseDialog({
         <DialogHeader>
           <DialogTitle>Nuevo gasto</DialogTitle>
           <DialogDescription className="text-zinc-500">
-            Registra un gasto pagado. PlayNow API determinará el importe definitivo y su efecto financiero.
+            Registra un gasto pagado y asócialo con su método de pago.
           </DialogDescription>
         </DialogHeader>
 
@@ -247,7 +245,7 @@ export default function CreateExpenseDialog({
             />
             {showAmountError && (
               <p id="expense-amount-error" className="text-xs text-red-400">
-                Usa un importe entre 0.01 y 9999999999.99, con máximo 2 decimales.
+                Ingresa un importe mayor que 0 con máximo 2 decimales.
               </p>
             )}
             {isAmountValid && (
@@ -322,7 +320,7 @@ export default function CreateExpenseDialog({
               )}
             {selectedPaymentMethod?.method_type === "cash" && (
               <p className="text-xs text-emerald-400">
-                Este gasto será considerado por PlayNow API en el cálculo de caja.
+                Este gasto se reflejará en el cálculo de caja.
               </p>
             )}
           </div>

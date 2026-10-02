@@ -24,7 +24,7 @@ export default function SaleDetailDialog({ transaction, open, onOpenChange }: Pr
         </DialogHeader>
 
         <dl className="grid gap-4 rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:grid-cols-2 lg:grid-cols-5">
-          <div><dt className="text-xs text-zinc-500">Employee</dt><dd className="mt-1 text-sm text-white">{transaction.employee_name ?? "Sin nombre disponible"}</dd></div>
+          <div><dt className="text-xs text-zinc-500">Empleado</dt><dd className="mt-1 text-sm text-white">{transaction.employee_name ?? "Sin nombre disponible"}</dd></div>
           <div><dt className="text-xs text-zinc-500">Cliente</dt><dd className="mt-1 text-sm text-white">{transaction.customer_name ?? "Sin cliente"}</dd></div>
           <div><dt className="text-xs text-zinc-500">Fecha</dt><dd className="mt-1 text-sm text-white">{formatSaleDate(transaction.created_at)}</dd></div>
           <div><dt className="text-xs text-zinc-500">Estado de pago</dt><dd className="mt-1 text-sm text-white">{PAYMENT_LABELS[transaction.payment_status]}</dd></div>

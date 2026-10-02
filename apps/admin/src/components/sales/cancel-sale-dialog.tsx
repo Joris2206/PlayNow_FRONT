@@ -35,7 +35,7 @@ export default function CancelSaleDialog({ transaction, businessPublicId, open, 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="border-white/10 bg-zinc-950 text-white">
-        <DialogHeader><DialogTitle>¿Anular esta venta?</DialogTitle><DialogDescription className="text-zinc-500">La venta no será borrada físicamente. PlayNow API la marcará como anulada y restaurará el stock correspondiente.</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>¿Anular esta venta?</DialogTitle><DialogDescription className="text-zinc-500">La venta se marcará como anulada y el stock correspondiente será restaurado.</DialogDescription></DialogHeader>
         {cancelSale.error && <div role="alert" className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">{cancelSale.error instanceof Error ? cancelSale.error.message : "No fue posible anular la venta."}</div>}
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={cancelSale.isPending} className="border-white/10 bg-transparent text-white hover:bg-white/5">Cancelar</Button>

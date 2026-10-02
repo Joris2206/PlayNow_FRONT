@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { useStickyToolbarOffset } from "@/hooks/use-sticky-toolbar-offset";
 import type { TransactionType } from "@/types/transaction";
 
 export type DebtSettlementFilter = "open" | "settled" | "all";
@@ -17,7 +18,9 @@ type Props = {
 const tabClassName = "rounded-lg px-4 py-2.5 text-sm font-medium transition";
 
 export default function DebtsToolbar({ transactionType, settlement, pageSize, onTransactionTypeChange, onSettlementChange, onPageSizeChange }: Props) {
-  return <div className="sticky top-20 z-20 space-y-4 rounded-2xl border border-white/10 bg-zinc-950/95 p-4 shadow-xl shadow-black/20 backdrop-blur-xl">
+  const toolbarRef = useStickyToolbarOffset<HTMLDivElement>();
+
+  return <div ref={toolbarRef} className="sticky top-20 z-20 space-y-4 rounded-2xl border border-white/10 bg-zinc-950/95 p-4 shadow-xl shadow-black/20 backdrop-blur-xl">
     <div role="tablist" aria-label="Tipo de cartera" className="grid gap-2 rounded-xl bg-black/30 p-1 sm:grid-cols-2">
       <button type="button" role="tab" aria-selected={transactionType === "sale"} onClick={() => onTransactionTypeChange("sale")} className={cn(tabClassName, transactionType === "sale" ? "bg-red-500 text-white" : "text-zinc-400 hover:bg-white/5 hover:text-white")}>Cuentas por cobrar</button>
       <button type="button" role="tab" aria-selected={transactionType === "purchase"} onClick={() => onTransactionTypeChange("purchase")} className={cn(tabClassName, transactionType === "purchase" ? "bg-red-500 text-white" : "text-zinc-400 hover:bg-white/5 hover:text-white")}>Cuentas por pagar</button>

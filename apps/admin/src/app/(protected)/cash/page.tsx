@@ -135,7 +135,7 @@ export default function CashPage() {
       <PageHeader
         eyebrow="Finanzas"
         title="Caja"
-        description="Controla la apertura, los movimientos manuales y el cierre usando los cálculos autoritativos de PlayNow API."
+        description="Administra la apertura, los movimientos y el cierre de caja."
       />
 
       {(isAuthLoading || openRegistersQuery.isLoading) && (
@@ -179,7 +179,7 @@ export default function CashPage() {
             Abre una caja para comenzar
           </h2>
           <p className="mt-2 max-w-md text-sm leading-6 text-zinc-500">
-            Define el Employee responsable y el efectivo inicial. Las operaciones automáticas serán calculadas por el Backend.
+            Selecciona al empleado responsable e indica el efectivo inicial.
           </p>
           <Button type="button" onClick={() => setOpenDialogOpen(true)} className="mt-6 bg-red-500 text-white hover:bg-red-600">
             <Plus className="h-4 w-4" />
@@ -202,7 +202,7 @@ export default function CashPage() {
                   </span>
                 </div>
                 <h2 className="mt-4 text-xl font-semibold text-white">
-                  {openRegister.employee_name ?? "Employee sin nombre disponible"}
+                  {openRegister.employee_name ?? "Empleado sin nombre disponible"}
                 </h2>
                 <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-zinc-400">
                   <span>

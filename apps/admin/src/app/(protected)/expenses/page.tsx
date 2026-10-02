@@ -86,7 +86,7 @@ export default function ExpensesPage() {
       <PageHeader
         eyebrow="Finanzas"
         title="Gastos"
-        description="Registra gastos pagados y consulta su impacto financiero autoritativo en PlayNow API."
+        description="Registra y consulta los gastos de tu negocio."
       />
 
       <ExpensesToolbar

@@ -49,6 +49,16 @@ export const employeeKeys = {
       params.statusPublicId,
     ] as const;
   },
+  detail(
+    businessPublicId: string | undefined,
+    publicId: string | undefined
+  ) {
+    return [
+      ...this.byBusiness(businessPublicId),
+      "detail",
+      publicId,
+    ] as const;
+  },
 };
 
 function toListParams(params: UseEmployeesParams) {
@@ -81,6 +91,25 @@ export function useAdminEmployees(params: UseEmployeesParams) {
       previousQuery?.queryKey[1] === params.businessPublicId
         ? previousData
         : undefined,
+  });
+}
+
+type UseEmployeeParams = {
+  businessPublicId?: string;
+  publicId?: string;
+};
+
+export function useEmployee({
+  businessPublicId,
+  publicId,
+}: UseEmployeeParams) {
+  return useQuery({
+    queryKey: employeeKeys.detail(
+      businessPublicId,
+      publicId
+    ),
+    queryFn: () => employeeService.get(publicId!),
+    enabled: Boolean(businessPublicId && publicId),
   });
 }
 

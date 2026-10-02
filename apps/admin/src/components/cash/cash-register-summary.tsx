@@ -67,7 +67,7 @@ export default function CashRegisterSummary({
     return (
       <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6 text-center">
         <p className="text-sm text-red-300">
-          No fue posible obtener el resumen autoritativo de la caja.
+          No fue posible obtener el resumen de la caja.
         </p>
 
         <Button
@@ -118,7 +118,7 @@ export default function CashRegisterSummary({
             Resumen actual
           </h2>
           <p className="mt-1 text-xs text-zinc-500">
-            Calculado por PlayNow API hasta {new Intl.DateTimeFormat(
+            Actualizado hasta {new Intl.DateTimeFormat(
               "es-NI",
               { dateStyle: "medium", timeStyle: "short" }
             ).format(new Date(preview.period.until))}.

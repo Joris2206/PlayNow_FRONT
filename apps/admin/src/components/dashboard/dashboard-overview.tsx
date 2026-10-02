@@ -47,7 +47,7 @@ export default function DashboardOverviewContent({ overview }: DashboardOverview
             <h2 className="font-medium">Pagos recibidos</h2>
           </div>
           <p className="mt-5 text-3xl font-semibold tracking-tight text-white">{formatReportMoney(cards.payments_received, currency)}</p>
-          <p className="mt-2 text-sm text-zinc-500">Entradas autoritativas del período.</p>
+          <p className="mt-2 text-sm text-zinc-500">Ingresos registrados durante el período.</p>
         </article>
         <article className="rounded-2xl border border-orange-500/20 bg-orange-500/[0.05] p-5 sm:p-6">
           <div className="flex items-center gap-3 text-orange-400">
@@ -55,7 +55,7 @@ export default function DashboardOverviewContent({ overview }: DashboardOverview
             <h2 className="font-medium">Pagos realizados</h2>
           </div>
           <p className="mt-5 text-3xl font-semibold tracking-tight text-white">{formatReportMoney(cards.payments_made, currency)}</p>
-          <p className="mt-2 text-sm text-zinc-500">Salidas autoritativas del período.</p>
+          <p className="mt-2 text-sm text-zinc-500">Egresos registrados durante el período.</p>
         </article>
       </section>
 

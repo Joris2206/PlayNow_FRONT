@@ -27,7 +27,7 @@ export default function CustomersTable({ customers }: { customers: Customer[] })
 
   return (
     <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
-      <Table className="min-w-[720px]">
+      <Table stickyHeader className="min-w-[720px]">
         <TableHeader className="bg-white/[0.02]">
           <TableRow className="border-white/10 hover:bg-transparent">
             <TableHead className="px-5 text-zinc-500">Nombre</TableHead>

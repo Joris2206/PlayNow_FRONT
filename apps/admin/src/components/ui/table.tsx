@@ -2,17 +2,90 @@
 
 import * as React from "react"
 
+import { STICKY_TOOLBAR_OFFSET_CHANGE_EVENT } from "@/hooks/use-sticky-toolbar-offset"
 import { cn } from "@/lib/utils"
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+type TableProps = React.ComponentProps<"table"> & {
+  containerClassName?: string
+  stickyHeader?: boolean
+}
+
+function Table({
+  className,
+  containerClassName,
+  stickyHeader = false,
+  ...props
+}: TableProps) {
+  const tableRef = React.useRef<HTMLTableElement>(null)
+
+  React.useLayoutEffect(() => {
+    const table = tableRef.current
+    if (!stickyHeader || !table) return
+
+    let animationFrame = 0
+    const updateHeaderPosition = () => {
+      cancelAnimationFrame(animationFrame)
+      animationFrame = requestAnimationFrame(() => {
+        const header = table.tHead
+        if (!header) return
+
+        const configuredTop = Number.parseFloat(
+          getComputedStyle(document.documentElement).getPropertyValue(
+            "--admin-sticky-table-top"
+          )
+        )
+        const stickyTop = Number.isFinite(configuredTop) ? configuredTop : 80
+        const tableTop = table.getBoundingClientRect().top
+        const maximumOffset = Math.max(0, table.offsetHeight - header.offsetHeight)
+        const offset = Math.min(
+          Math.max(stickyTop - tableTop, 0),
+          maximumOffset
+        )
+
+        table.style.setProperty("--admin-table-header-translate", `${offset}px`)
+      })
+    }
+
+    updateHeaderPosition()
+    window.addEventListener("scroll", updateHeaderPosition, { passive: true })
+    window.addEventListener("resize", updateHeaderPosition)
+    window.addEventListener(
+      STICKY_TOOLBAR_OFFSET_CHANGE_EVENT,
+      updateHeaderPosition
+    )
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(updateHeaderPosition)
+    observer?.observe(table)
+
+    return () => {
+      cancelAnimationFrame(animationFrame)
+      observer?.disconnect()
+      window.removeEventListener("scroll", updateHeaderPosition)
+      window.removeEventListener("resize", updateHeaderPosition)
+      window.removeEventListener(
+        STICKY_TOOLBAR_OFFSET_CHANGE_EVENT,
+        updateHeaderPosition
+      )
+      table.style.removeProperty("--admin-table-header-translate")
+    }
+  }, [stickyHeader])
+
   return (
     <div
       data-slot="table-container"
-      className="relative w-full overflow-x-auto"
+      className={cn("relative w-full overflow-x-auto", containerClassName)}
     >
       <table
+        ref={tableRef}
         data-slot="table"
-        className={cn("w-full caption-bottom text-sm", className)}
+        className={cn(
+          "w-full caption-bottom text-sm",
+          stickyHeader &&
+            "[&_thead_th]:sticky [&_thead_th]:top-0 [&_thead_th]:z-10 [&_thead_th]:translate-y-[var(--admin-table-header-translate,0px)] [&_thead_th]:bg-zinc-950 [&_thead_th]:shadow-[inset_0_-1px_0_rgba(255,255,255,0.1)]",
+          className
+        )}
         {...props}
       />
     </div>

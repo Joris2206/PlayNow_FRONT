@@ -167,7 +167,7 @@ export default function PaymentMethodsTable({
 
       <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
         <div className="overflow-x-auto">
-          <Table className="min-w-[720px]">
+          <Table stickyHeader className="min-w-[720px]">
             <TableHeader className="border-b border-white/10 bg-white/[0.02]">
               <TableRow className="border-white/10 text-left text-xs uppercase tracking-wider text-zinc-500 hover:bg-transparent">
                 <TableHead className="h-auto px-5 py-4 font-medium text-zinc-500">

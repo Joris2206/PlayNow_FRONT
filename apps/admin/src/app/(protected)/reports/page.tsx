@@ -81,7 +81,7 @@ export default function ReportsPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <PageHeader eyebrow="Análisis" title="Reportes" description="Consulta agregados financieros e históricos calculados directamente por PlayNow API." />
+      <PageHeader eyebrow="Análisis" title="Reportes" description="Consulta el rendimiento y los movimientos de tu negocio." />
       <div className="flex flex-wrap gap-2 border-b border-white/10 pb-3">
         {tabs.map((tab) => <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} className={cn("rounded-lg px-4 py-2 text-sm font-medium transition", activeTab === tab.id ? "bg-red-500 text-white" : "text-zinc-400 hover:bg-white/5 hover:text-white")}>{tab.label}</button>)}
       </div>

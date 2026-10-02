@@ -24,6 +24,14 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/providers/auth-provider";
 
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { EditProductDialog } from "@/components/products/create-product-dialog";
 import DeleteProductDialog from "@/components/products/delete-product-dialog";
 import {
@@ -179,38 +187,38 @@ export default function ProductsTable({
 
       <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
         <div className="overflow-x-auto">
-        <table className="w-full min-w-[900px]">
-          <thead className="border-b border-white/10 bg-white/[0.02]">
-            <tr className="text-left text-xs uppercase tracking-wider text-zinc-500">
-              <th className="px-5 py-4 font-medium">
+        <Table stickyHeader className="min-w-[900px]">
+          <TableHeader className="border-b border-white/10 bg-white/[0.02]">
+            <TableRow className="text-left text-xs uppercase tracking-wider text-zinc-500">
+              <TableHead className="px-5 py-4 font-medium">
                 Producto
-              </th>
+              </TableHead>
 
-              <th className="px-5 py-4 font-medium">
+              <TableHead className="px-5 py-4 font-medium">
                 Categoría
-              </th>
+              </TableHead>
 
-              <th className="px-5 py-4 font-medium">
+              <TableHead className="px-5 py-4 font-medium">
                 Precio
-              </th>
+              </TableHead>
 
-              <th className="px-5 py-4 font-medium">
+              <TableHead className="px-5 py-4 font-medium">
                 Costo
-              </th>
+              </TableHead>
 
-              <th className="px-5 py-4 font-medium">
+              <TableHead className="px-5 py-4 font-medium">
                 Stock
-              </th>
+              </TableHead>
 
-              <th className="px-5 py-4 font-medium">
+              <TableHead className="px-5 py-4 font-medium">
                 Estado
-              </th>
+              </TableHead>
 
-              <th className="w-16 px-5 py-4" />
-            </tr>
-          </thead>
+              <TableHead className="w-16 px-5 py-4" />
+            </TableRow>
+          </TableHeader>
 
-          <tbody className="divide-y divide-white/10">
+          <TableBody className="divide-y divide-white/10">
             {products.map((product) => {
               const canDeleteProduct =
                 canDelete &&
@@ -242,11 +250,11 @@ export default function ProductsTable({
                   product.public_id;
 
               return (
-              <tr
+              <TableRow
                 key={product.public_id}
                 className="transition hover:bg-white/[0.025]"
               >
-                <td className="px-5 py-4">
+                <TableCell className="px-5 py-4">
                   <div>
                     <p className="font-medium text-white">
                       {product.title}
@@ -258,27 +266,27 @@ export default function ProductsTable({
                       </p>
                     )}
                   </div>
-                </td>
+                </TableCell>
 
-                <td className="px-5 py-4 text-sm text-zinc-400">
+                <TableCell className="px-5 py-4 text-sm text-zinc-400">
                   {product.category_name ?? "Sin categoría"}
-                </td>
+                </TableCell>
 
-                <td className="px-5 py-4 text-sm font-medium text-white">
+                <TableCell className="px-5 py-4 text-sm font-medium text-white">
                   {formatMoney(product.base_price)}
-                </td>
+                </TableCell>
 
-                <td className="px-5 py-4 text-sm text-zinc-400">
+                <TableCell className="px-5 py-4 text-sm text-zinc-400">
                   {formatMoney(product.base_cost)}
-                </td>
+                </TableCell>
 
-                <td className="px-5 py-4">
+                <TableCell className="px-5 py-4">
                   <span className="text-sm text-zinc-300">
                     {product.stock}
                   </span>
-                </td>
+                </TableCell>
 
-                <td className="px-5 py-4">
+                <TableCell className="px-5 py-4">
                   <span
                     className={cn(
                       "inline-flex rounded-full border px-2.5 py-1 text-xs font-medium",
@@ -289,9 +297,9 @@ export default function ProductsTable({
                   >
                     {product.status_name}
                   </span>
-                </td>
+                </TableCell>
 
-                <td className="px-5 py-4 text-right">
+                <TableCell className="px-5 py-4 text-right">
                   {hasProductActions && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -374,12 +382,12 @@ export default function ProductsTable({
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
               );
             })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
         </div>
       </div>
 

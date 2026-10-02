@@ -58,7 +58,7 @@ export function PaymentsReport({ data }: { data: PaymentSummary }) {
       <div className="grid gap-4 sm:grid-cols-3">
         <Metric label="Recibido" value={formatReportMoney(data.totals.payments_received, currency)} tone="positive" />
         <Metric label="Realizado" value={formatReportMoney(data.totals.payments_made, currency)} tone="negative" />
-        <Metric label="Neto" value={formatReportMoney(data.totals.net_amount, currency)} detail="Neto autoritativo de PlayNow API" />
+        <Metric label="Neto" value={formatReportMoney(data.totals.net_amount, currency)} detail="Balance entre ingresos y egresos" />
       </div>
       <Section title="Pagos de deuda" description="Cobros y pagos registrados dentro del período.">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -127,11 +127,11 @@ export function MonthlyReport({ data }: { data: MonthlySummary }) {
           <Metric label="Gastos" value={formatReportMoney(data.transactions.expenses.total, currency)} detail={`${data.transactions.expenses.count} operaciones`} />
         </div>
       </Section>
-      <Section title="Flujo" description="Valores financieros calculados por PlayNow API.">
+      <Section title="Flujo" description="Resumen de ingresos y egresos del período.">
         <div className="grid gap-4 sm:grid-cols-3">
           <Metric label="Recibido" value={formatReportMoney(data.payments.received, currency)} tone="positive" />
           <Metric label="Realizado" value={formatReportMoney(data.payments.made, currency)} tone="negative" />
-          <Metric label="Neto" value={formatReportMoney(data.payments.net, currency)} detail="Neto autoritativo" />
+          <Metric label="Neto" value={formatReportMoney(data.payments.net, currency)} detail="Balance del período" />
         </div>
       </Section>
       <Section title="Cartera al cierre" description="Receivables y payables se mantienen separados.">
@@ -166,7 +166,7 @@ export function InventoryReport({ data }: { data: InventorySummary }) {
   const totals = data.totals;
   return (
     <div className="space-y-6">
-      <Section title="Resumen de inventario" description="Existencias y movimientos históricos calculados por PlayNow API.">
+      <Section title="Resumen de inventario" description="Existencias y movimientos registrados durante el período.">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           <Metric label="Productos" value={String(totals.items_count)} />
           <Metric label="Stock inicial" value={String(totals.opening_stock)} />

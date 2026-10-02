@@ -1,6 +1,6 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
+import DateInput from "@/components/shared/date-input";
 import { cn } from "@/lib/utils";
 import type {
   DateRangePreset,
@@ -65,8 +65,9 @@ export default function DateRangeFilter({
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <label className="text-sm text-zinc-400">
             Desde
-            <Input
-              type="date"
+            <DateInput
+              aria-label="Fecha inicial"
+              pickerLabel="Abrir calendario de fecha inicial"
               value={value.dateFrom}
               onChange={(event) => onChange({
                 ...value,
@@ -77,8 +78,9 @@ export default function DateRangeFilter({
           </label>
           <label className="text-sm text-zinc-400">
             Hasta
-            <Input
-              type="date"
+            <DateInput
+              aria-label="Fecha final"
+              pickerLabel="Abrir calendario de fecha final"
               value={value.dateTo}
               onChange={(event) => onChange({
                 ...value,

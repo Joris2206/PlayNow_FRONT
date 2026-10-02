@@ -106,12 +106,12 @@ export default function CashMovementsTable({
         <>
           <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
             <div className="overflow-x-auto">
-              <Table className="min-w-[900px]">
+              <Table stickyHeader className="min-w-[900px]">
                 <TableHeader className="border-b border-white/10 bg-white/[0.02]">
                   <TableRow className="border-white/10 hover:bg-transparent">
                     <TableHead className="px-5 text-zinc-500">Fecha</TableHead>
                     <TableHead className="px-5 text-zinc-500">Tipo</TableHead>
-                    <TableHead className="px-5 text-zinc-500">Employee</TableHead>
+                    <TableHead className="px-5 text-zinc-500">Empleado</TableHead>
                     <TableHead className="px-5 text-zinc-500">Método</TableHead>
                     <TableHead className="px-5 text-zinc-500">Nota</TableHead>
                     <TableHead className="px-5 text-right text-zinc-500">Importe</TableHead>

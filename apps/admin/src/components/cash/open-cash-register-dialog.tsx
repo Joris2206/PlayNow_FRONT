@@ -173,14 +173,14 @@ export default function OpenCashRegisterDialog({
         <DialogHeader>
           <DialogTitle>Abrir caja</DialogTitle>
           <DialogDescription className="text-zinc-500">
-            Selecciona al Employee responsable e indica el efectivo inicial contado.
+            Selecciona al empleado responsable e indica el efectivo inicial contado.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
             <label htmlFor="cash-open-employee" className="text-sm font-medium text-zinc-300">
-              Employee
+              Empleado
             </label>
             <select
               id="cash-open-employee"
@@ -200,12 +200,12 @@ export default function OpenCashRegisterDialog({
             >
               <option value="">
                 {employeesQuery.isLoading
-                  ? "Cargando Employees..."
-                  : "Selecciona un Employee"}
+                  ? "Cargando empleados..."
+                  : "Selecciona un empleado"}
               </option>
               {employeePublicId && !selectedEmployeeIsListed && (
                 <option value={employeePublicId}>
-                  Employee asociado a tu membresía
+                  Empleado asociado a tu membresía
                 </option>
               )}
               {employees.map((employee) => (
@@ -216,12 +216,12 @@ export default function OpenCashRegisterDialog({
             </select>
             {attemptedSubmit && !employeePublicId && (
               <p className="text-xs text-red-400">
-                Selecciona el Employee responsable de la caja.
+                Selecciona al empleado responsable de la caja.
               </p>
             )}
             {employeesQuery.isError && (
               <div className="flex items-center justify-between gap-3 text-sm text-red-300">
-                <span>No fue posible cargar los Employees.</span>
+                <span>No fue posible cargar los empleados.</span>
                 <Button type="button" variant="ghost" size="sm" onClick={() => employeesQuery.refetch()}>
                   Reintentar
                 </Button>
@@ -229,7 +229,7 @@ export default function OpenCashRegisterDialog({
             )}
             {statusesQuery.isError && (
               <p role="alert" className="text-sm text-red-300">
-                No fue posible resolver el estado Activo de los Employees.
+                No fue posible encontrar el estado Activo de los empleados.
               </p>
             )}
             {statusesQuery.isSuccess && !activeStatus && (

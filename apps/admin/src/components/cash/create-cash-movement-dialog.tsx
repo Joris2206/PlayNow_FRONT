@@ -294,7 +294,7 @@ export default function CreateCashMovementDialog({
           {employeeRequired && (
             <div className="space-y-2">
               <label htmlFor="cash-movement-employee" className="text-sm font-medium text-zinc-300">
-                Employee
+                Empleado
               </label>
               <select
                 id="cash-movement-employee"
@@ -314,8 +314,8 @@ export default function CreateCashMovementDialog({
               >
                 <option value="">
                   {employeesQuery.isLoading
-                    ? "Cargando Employees..."
-                    : "Selecciona un Employee"}
+                    ? "Cargando empleados..."
+                    : "Selecciona un empleado"}
                 </option>
                 {employees.map((employee) => (
                   <option key={employee.public_id} value={employee.public_id}>
@@ -325,12 +325,12 @@ export default function CreateCashMovementDialog({
               </select>
               {attemptedSubmit && !employeePublicId && (
                 <p className="text-xs text-red-400">
-                  Este tipo de movimiento requiere un Employee.
+                  Este tipo de movimiento requiere un empleado.
                 </p>
               )}
               {employeesQuery.isError && (
                 <div className="flex items-center justify-between gap-3 text-sm text-red-300">
-                  <span>No fue posible cargar los Employees.</span>
+                  <span>No fue posible cargar los empleados.</span>
                   <Button type="button" variant="ghost" size="sm" onClick={() => employeesQuery.refetch()}>
                     Reintentar
                   </Button>
@@ -338,7 +338,7 @@ export default function CreateCashMovementDialog({
               )}
               {statusesQuery.isError && (
                 <p role="alert" className="text-sm text-red-300">
-                  No fue posible resolver el estado Activo de los Employees.
+                  No fue posible encontrar el estado Activo de los empleados.
                 </p>
               )}
               {statusesQuery.isSuccess && !activeStatus && (
@@ -393,7 +393,7 @@ export default function CreateCashMovementDialog({
               ))}
             </select>
             <p className="text-xs leading-5 text-zinc-600">
-              Es un dato opcional. El impacto del movimiento en caja lo determina el Backend por su tipo.
+              Es un dato opcional. El tipo seleccionado determina cómo afecta este movimiento a la caja.
             </p>
             {paymentMethodsQuery.isError && (
               <div className="flex items-center justify-between gap-3 text-sm text-red-300">

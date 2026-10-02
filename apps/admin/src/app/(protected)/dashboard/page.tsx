@@ -39,7 +39,7 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <PageHeader eyebrow="Resumen general" title="Dashboard" description="Visión ejecutiva del período con métricas calculadas por PlayNow API." />
+      <PageHeader eyebrow="Resumen general" title="Dashboard" description="Consulta el rendimiento y los movimientos de tu negocio." />
       <DateRangeFilter preset={preset} value={range} onPresetChange={(nextPreset, nextRange) => { setPreset(nextPreset); setRange(nextRange); }} onChange={setRange} />
       {(isAuthLoading || overviewQuery.isLoading) && validRange && <div className="flex min-h-80 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03]"><div className="flex flex-col items-center gap-4"><LoaderCircle className="h-7 w-7 animate-spin text-red-500" /><p className="text-sm text-zinc-500">Cargando resumen...</p></div></div>}
       {overviewQuery.isError && <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6 text-center"><AlertCircle className="mx-auto h-7 w-7 text-red-400" /><h2 className="mt-4 font-medium text-white">No pudimos cargar el Dashboard</h2><p className="mt-2 text-sm text-zinc-400">{getFinancialReadErrorMessage(overviewQuery.error, "No fue posible cargar el resumen.")}</p><Button type="button" variant="outline" onClick={() => overviewQuery.refetch()} className="mt-5 border-white/10 bg-transparent text-white hover:bg-white/5">Reintentar</Button></div>}

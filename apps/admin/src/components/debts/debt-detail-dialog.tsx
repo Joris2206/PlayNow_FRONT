@@ -60,7 +60,7 @@ export default function DebtDetailDialog({ debt, businessPublicId, open, onOpenC
       <div><dt className="text-xs text-zinc-500">Pagado</dt><dd className="mt-1 text-sm text-white">{formatDebtAmount(debt.paid_amount)}</dd></div>
       <div><dt className="text-xs text-zinc-500">Saldo pendiente</dt><dd className="mt-1 text-sm font-semibold text-white">{formatDebtAmount(debt.outstanding_amount)}</dd></div>
       <div><dt className="text-xs text-zinc-500">Estado de pago</dt><dd className="mt-1"><span className={cn("inline-flex rounded-full border px-2.5 py-1 text-xs font-medium", getPaymentStatusClassName(debt.payment_status))}>{PAYMENT_STATUS_LABELS[debt.payment_status]}</span></dd></div>
-      <div><dt className="text-xs text-zinc-500">Estado de Transaction</dt><dd className="mt-1"><span className={cn("inline-flex rounded-full border px-2.5 py-1 text-xs font-medium", getCatalogStatusClassName(debt.transaction_status_name))}>{debt.transaction_status_name}</span></dd></div>
+      <div><dt className="text-xs text-zinc-500">Estado de la operación</dt><dd className="mt-1"><span className={cn("inline-flex rounded-full border px-2.5 py-1 text-xs font-medium", getCatalogStatusClassName(debt.transaction_status_name))}>{debt.transaction_status_name}</span></dd></div>
     </dl>
 
     <section className="space-y-4"><div><h3 className="font-medium text-white">Historial de pagos</h3><p className="mt-1 text-sm text-zinc-500">Pagos registrados para esta deuda, en modo de solo lectura.</p></div>

@@ -86,6 +86,12 @@ export const adminNavigation: readonly AdminNavigationItem[] = [
     access: "employees",
   },
   {
+    label: "Comisiones",
+    href: "/commissions",
+    icon: HandCoins,
+    access: "commissions",
+  },
+  {
     label: "Deudas",
     href: "/debts",
     icon: WalletCards,

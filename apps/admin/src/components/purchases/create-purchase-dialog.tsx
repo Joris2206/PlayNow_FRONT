@@ -188,7 +188,7 @@ export default function CreatePurchaseDialog({ businessPublicId, open, onOpenCha
 
   const errorMessage = createPurchase.error ? firstApiMessage(createPurchase.error) : null;
   return <Dialog open={open} onOpenChange={(nextOpen) => nextOpen ? onOpenChange(true) : resetAndClose()}><DialogContent className="max-h-[92vh] overflow-y-auto border-white/10 bg-zinc-950 text-white sm:max-w-5xl">
-    <DialogHeader><DialogTitle>Nueva compra</DialogTitle><DialogDescription className="text-zinc-500">Registra una compra pagada, pendiente o parcial. PlayNow API actualizará el inventario y calculará el total definitivo.</DialogDescription></DialogHeader>
+    <DialogHeader><DialogTitle>Nueva compra</DialogTitle><DialogDescription className="text-zinc-500">Registra una compra pagada, pendiente o parcial.</DialogDescription></DialogHeader>
     <form onSubmit={handleSubmit} className="space-y-6">
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3"><div><label htmlFor="purchase-supplier" className="text-sm font-medium text-zinc-300">Proveedor {requiresSupplier ? "(obligatorio)" : "(opcional)"}</label><p className="mt-1 text-xs text-zinc-500">{requiresSupplier ? "Las compras pendientes o parciales requieren proveedor." : "Puedes registrar la compra pagada sin proveedor."}</p></div><Button type="button" variant="ghost" size="sm" onClick={() => setSupplierDialogOpen(true)} disabled={!businessPublicId || createPurchase.isPending} className="text-red-400 hover:bg-red-500/10 hover:text-red-300"><Plus className="h-4 w-4" />Nuevo proveedor</Button></div>

@@ -47,7 +47,7 @@ export default function CashRegisterHistory({
             Historial de cajas
           </h2>
           <p className="mt-1 text-sm text-zinc-500">
-            Cierres autoritativos registrados por PlayNow API.
+            Consulta los cierres de caja registrados.
           </p>
         </div>
 
@@ -103,10 +103,10 @@ export default function CashRegisterHistory({
         <>
           <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
             <div className="overflow-x-auto">
-              <Table className="min-w-[1180px]">
+              <Table stickyHeader className="min-w-[1180px]">
                 <TableHeader className="border-b border-white/10 bg-white/[0.02]">
                   <TableRow className="border-white/10 hover:bg-transparent">
-                    <TableHead className="px-5 text-zinc-500">Employee</TableHead>
+                    <TableHead className="px-5 text-zinc-500">Empleado</TableHead>
                     <TableHead className="px-5 text-zinc-500">Apertura</TableHead>
                     <TableHead className="px-5 text-zinc-500">Cierre</TableHead>
                     <TableHead className="px-5 text-right text-zinc-500">Inicial</TableHead>

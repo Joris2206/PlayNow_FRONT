@@ -11,6 +11,7 @@ import {
   cashRegisterKeys,
   type CashMovementKeyParams,
 } from "@/hooks/cash-query-keys";
+import { commissionKeys } from "@/hooks/commission-query-keys";
 import { cashMovementService } from "@/services/cash-movement-service";
 
 import type { CreateCashMovementRequest } from "@/types/cash";
@@ -75,6 +76,21 @@ export function useCreateCashMovement() {
             variables.data.cash_register_public_id
           ),
         }),
+        ...(variables.data.movement_type === "employee_advance" ||
+        variables.data.movement_type === "employee_repayment"
+          ? [
+              queryClient.invalidateQueries({
+                queryKey: variables.data.employee_public_id
+                  ? commissionKeys.previewsByEmployee(
+                      variables.businessPublicId,
+                      variables.data.employee_public_id
+                    )
+                  : commissionKeys.previews(
+                      variables.businessPublicId
+                    ),
+              }),
+            ]
+          : []),
       ]),
   });
 }

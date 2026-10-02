@@ -165,7 +165,7 @@ export default function CloseCashRegisterDialog({
         <DialogHeader>
           <DialogTitle>Cerrar caja</DialogTitle>
           <DialogDescription className="text-zinc-500">
-            Cuenta el efectivo físico. PlayNow API recalculará y guardará el saldo esperado y la diferencia definitivos.
+            Cuenta el efectivo físico para registrar el saldo y su diferencia al cerrar.
           </DialogDescription>
         </DialogHeader>
 
@@ -174,7 +174,7 @@ export default function CloseCashRegisterDialog({
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-wider text-zinc-500">
-                  Saldo esperado autoritativo
+                  Saldo esperado
                 </p>
                 <p className="mt-2 text-2xl font-semibold text-white">
                   {preview

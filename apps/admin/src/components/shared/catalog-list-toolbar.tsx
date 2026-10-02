@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
+import { useStickyToolbarOffset } from "@/hooks/use-sticky-toolbar-offset";
 
 type CatalogListToolbarProps = {
   search: string;
@@ -26,8 +27,10 @@ export default function CatalogListToolbar({
   pageSizeLabel,
   actions,
 }: CatalogListToolbarProps) {
+  const toolbarRef = useStickyToolbarOffset<HTMLDivElement>();
+
   return (
-    <div className="sticky top-20 z-20 rounded-2xl border border-white/10 bg-zinc-950/95 p-4 shadow-xl shadow-black/20 backdrop-blur-xl">
+    <div ref={toolbarRef} className="sticky top-20 z-20 rounded-2xl border border-white/10 bg-zinc-950/95 p-4 shadow-xl shadow-black/20 backdrop-blur-xl">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative min-w-0 flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />

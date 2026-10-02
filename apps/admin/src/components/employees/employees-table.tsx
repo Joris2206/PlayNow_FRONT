@@ -137,7 +137,7 @@ export default function EmployeesTable({
 
       <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
         <div className="overflow-x-auto">
-          <Table className="min-w-[980px]">
+          <Table stickyHeader className="min-w-[980px]">
             <TableHeader className="border-b border-white/10 bg-white/[0.02]">
               <TableRow className="border-white/10 text-xs uppercase tracking-wider hover:bg-transparent">
                 {[

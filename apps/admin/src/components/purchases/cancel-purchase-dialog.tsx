@@ -43,7 +43,7 @@ export default function CancelPurchaseDialog({ transaction, businessPublicId, op
   }
 
   return <Dialog open={open} onOpenChange={handleOpenChange}><DialogContent className="border-white/10 bg-zinc-950 text-white">
-    <DialogHeader><DialogTitle>¿Anular esta compra?</DialogTitle><DialogDescription className="text-zinc-500">La compra no se eliminará físicamente: pasará a Anulado y PlayNow API revertirá el inventario generado por ella.</DialogDescription></DialogHeader>
+    <DialogHeader><DialogTitle>¿Anular esta compra?</DialogTitle><DialogDescription className="text-zinc-500">La compra se marcará como anulada y el inventario generado por ella será revertido.</DialogDescription></DialogHeader>
     {cancelPurchase.error && <div role="alert" className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">{firstApiMessage(cancelPurchase.error)}</div>}
     <DialogFooter><Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={cancelPurchase.isPending} className="border-white/10 bg-transparent text-white hover:bg-white/5">Cancelar</Button><Button type="button" variant="destructive" onClick={handleCancel} disabled={!transaction || !businessPublicId || cancelPurchase.isPending}>{cancelPurchase.isPending ? <><LoaderCircle className="h-4 w-4 animate-spin" />Anulando...</> : "Anular compra"}</Button></DialogFooter>
   </DialogContent></Dialog>;

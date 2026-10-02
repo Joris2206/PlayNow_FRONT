@@ -5,6 +5,12 @@ export type StockMovementType =
   | "sale"
   | "adjustment";
 
+export type StockMovementOriginType =
+  | "sale"
+  | "purchase"
+  | "adjustment"
+  | "unknown";
+
 export type StockMovement = {
   public_id: string;
   product_public_id: string;
@@ -14,6 +20,8 @@ export type StockMovement = {
   note: string;
   type: StockMovementType;
   quantity: number;
+  origin_type: StockMovementOriginType;
+  is_reversal: boolean | null;
   created_by_email: string | null;
   created_at: string;
   updated_at: string;

@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cashRegisterKeys } from "@/hooks/cash-query-keys";
+import { commissionKeys } from "@/hooks/commission-query-keys";
 import { dashboardKeys } from "@/hooks/use-dashboard";
 import { productKeys } from "@/hooks/use-products";
 import { reportKeys } from "@/hooks/use-reports";
@@ -55,7 +56,11 @@ export function useTransactions(params: UseTransactionsParams) {
   });
 }
 
-function invalidateTransactionEffects(queryClient: ReturnType<typeof useQueryClient>, businessPublicId: string) {
+function invalidateTransactionEffects(
+  queryClient: ReturnType<typeof useQueryClient>,
+  businessPublicId: string,
+  includeCommissionPreview = false
+) {
   return Promise.all([
     queryClient.invalidateQueries({ queryKey: transactionKeys.byBusiness(businessPublicId) }),
     queryClient.invalidateQueries({ queryKey: productKeys.byBusiness(businessPublicId) }),
@@ -66,6 +71,13 @@ function invalidateTransactionEffects(queryClient: ReturnType<typeof useQueryCli
     queryClient.invalidateQueries({ queryKey: reportKeys.debtsScope(businessPublicId) }),
     queryClient.invalidateQueries({ queryKey: reportKeys.monthlyScope(businessPublicId) }),
     queryClient.invalidateQueries({ queryKey: reportKeys.inventoryScope(businessPublicId) }),
+    ...(includeCommissionPreview
+      ? [
+          queryClient.invalidateQueries({
+            queryKey: commissionKeys.previews(businessPublicId),
+          }),
+        ]
+      : []),
   ]);
 }
 
@@ -84,7 +96,11 @@ export function useCreateSale() {
   return useMutation({
     mutationFn: (data: CreateSaleRequest) => transactionService.createSale(data),
     onSuccess: (_transaction, variables) =>
-      invalidateTransactionEffects(queryClient, variables.business_public_id),
+      invalidateTransactionEffects(
+        queryClient,
+        variables.business_public_id,
+        true
+      ),
   });
 }
 
@@ -95,14 +111,18 @@ export function useCancelSale() {
   return useMutation({
     mutationFn: ({ publicId }: CancelSaleVariables) => transactionService.cancel(publicId),
     onSuccess: (_result, variables) =>
-      invalidateTransactionEffects(queryClient, variables.businessPublicId),
+      invalidateTransactionEffects(
+        queryClient,
+        variables.businessPublicId,
+        true
+      ),
   });
 }
 
 export function useRefreshSaleEffects() {
   const queryClient = useQueryClient();
   return (businessPublicId: string) =>
-    invalidateTransactionEffects(queryClient, businessPublicId);
+    invalidateTransactionEffects(queryClient, businessPublicId, true);
 }
 
 export function useCreatePurchase() {
