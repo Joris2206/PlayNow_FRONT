@@ -5,6 +5,7 @@ import { LoaderCircle } from "lucide-react";
 import { useCreateDebtPayment, useRefreshDebtPaymentEffects } from "@/hooks/use-debt-payments";
 import { useDebt } from "@/hooks/use-debts";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
+import { extractDrfErrorMessage, getApiErrorMessage } from "@/lib/api-error";
 import { HttpError } from "@/lib/http";
 import DateInput from "@/components/shared/date-input";
 import { Button } from "@/components/ui/button";
@@ -40,38 +41,21 @@ function localToday() {
   return `${year}-${month}-${day}`;
 }
 
-function firstString(value: unknown): string | null {
-  if (typeof value === "string") return value;
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      const message = firstString(item);
-      if (message) return message;
-    }
-  }
-  if (typeof value === "object" && value !== null) {
-    for (const item of Object.values(value)) {
-      const message = firstString(item);
-      if (message) return message;
-    }
-  }
-  return null;
-}
-
 function paymentErrorMessage(error: unknown) {
-  if (!(error instanceof HttpError)) return error instanceof Error ? error.message : "No fue posible registrar el pago.";
+  if (!(error instanceof HttpError)) return getApiErrorMessage(error, "No fue posible registrar el pago.");
   if (typeof error.data === "object" && error.data !== null) {
     const data = error.data as Record<string, unknown>;
-    const detailMessage = firstString(data.detail ?? data.details);
+    const detailMessage = extractDrfErrorMessage(data.detail ?? data.details);
     if (detailMessage) return detailMessage;
     for (const [field, value] of Object.entries(error.data)) {
-      const message = firstString(value);
+      const message = extractDrfErrorMessage(value);
       if (message) return `${API_FIELD_LABELS[field] ?? field}: ${message}`;
     }
   }
   if (error.status === 403) return "No tienes permisos para registrar este pago.";
   if (error.status === 404) return "La deuda o el método de pago ya no está disponible para este negocio.";
   if (error.status === 409) return "El saldo cambió por otro pago. Revisa el saldo actualizado antes de continuar.";
-  return error.message;
+  return getApiErrorMessage(error, "No fue posible registrar el pago.");
 }
 
 function counterpartName(debt: Debt) {

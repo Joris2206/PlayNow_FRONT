@@ -21,7 +21,7 @@ export type AdminNavigationItem = {
   label: string;
   href: string;
   icon: LucideIcon;
-  access?: AdminAccessPolicy;
+  access: AdminAccessPolicy;
 };
 
 export const adminNavigation: readonly AdminNavigationItem[] = [

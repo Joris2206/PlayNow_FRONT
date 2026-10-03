@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { cashRegisterKeys } from "@/hooks/cash-query-keys";
+import { cashMovementKeys, cashRegisterKeys } from "@/hooks/cash-query-keys";
 import { dashboardKeys } from "@/hooks/use-dashboard";
 import { debtKeys } from "@/hooks/use-debts";
 import { reportKeys } from "@/hooks/use-reports";
@@ -67,6 +67,7 @@ function invalidateDebtPaymentEffects(
     queryClient.invalidateQueries({ queryKey: debtKeys.detail(businessPublicId, debtPublicId) }),
     queryClient.invalidateQueries({ queryKey: debtPaymentKeys.byDebt(businessPublicId, debtPublicId) }),
     queryClient.invalidateQueries({ queryKey: transactionKeys.byBusiness(businessPublicId) }),
+    queryClient.invalidateQueries({ queryKey: cashMovementKeys.byBusiness(businessPublicId) }),
     queryClient.invalidateQueries({ queryKey: cashRegisterKeys.previews(businessPublicId) }),
     queryClient.invalidateQueries({ queryKey: dashboardKeys.byBusiness(businessPublicId) }),
     queryClient.invalidateQueries({ queryKey: reportKeys.paymentsScope(businessPublicId) }),

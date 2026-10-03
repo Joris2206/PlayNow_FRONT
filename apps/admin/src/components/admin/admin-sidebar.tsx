@@ -28,6 +28,7 @@ export default function AdminSidebar({
         item.access
       )
   );
+  const homeHref = visibleNavigation[0]?.href ?? "/dashboard";
 
   return (
     <>
@@ -48,7 +49,7 @@ export default function AdminSidebar({
       >
         <div className="flex h-20 items-center border-b border-white/10 px-6">
           <Link
-            href="/dashboard"
+            href={homeHref}
             className="flex items-center gap-3"
             onClick={onClose}
           >

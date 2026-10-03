@@ -2,6 +2,7 @@
 
 import { LoaderCircle } from "lucide-react";
 import { useCancelPurchase, useRefreshPurchaseEffects } from "@/hooks/use-transactions";
+import { extractDrfErrorMessage, getApiErrorMessage } from "@/lib/api-error";
 import { HttpError } from "@/lib/http";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -10,13 +11,15 @@ import type { Transaction } from "@/types/transaction";
 type Props = { transaction: Transaction | null; businessPublicId?: string; open: boolean; onOpenChange: (open: boolean) => void };
 
 function firstApiMessage(error: unknown) {
-  if (!(error instanceof HttpError) || typeof error.data !== "object" || error.data === null) return error instanceof Error ? error.message : "No fue posible anular la compra.";
-  const data = error.data as Record<string, unknown>;
-  for (const value of [data.details, data.detail, ...Object.values(data)]) {
-    if (typeof value === "string") return value;
-    if (Array.isArray(value) && typeof value[0] === "string") return value[0];
+  if (!(error instanceof HttpError) || typeof error.data !== "object" || error.data === null) {
+    return getApiErrorMessage(error, "No fue posible anular la compra.");
   }
-  return error.message;
+  const data = error.data as Record<string, unknown>;
+  for (const value of [data.details, data.detail]) {
+    const message = extractDrfErrorMessage(value);
+    if (message) return message;
+  }
+  return getApiErrorMessage(error, "No fue posible anular la compra.");
 }
 
 export default function CancelPurchaseDialog({ transaction, businessPublicId, open, onOpenChange }: Props) {

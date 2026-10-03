@@ -12,6 +12,7 @@ import {
 
 import { useAuth } from "@/providers/auth-provider";
 import { useProducts } from "@/hooks/use-products";
+import { hasAccess } from "@/lib/permissions";
 
 import PageHeader from "@/components/shared/page-header";
 import CreateProductDialog from "@/components/products/create-product-dialog";
@@ -38,6 +39,10 @@ export default function ProductsPage() {
 
   const businessPublicId =
     activeMembership?.business_public_id;
+  const canEditCatalog = hasAccess(
+    activeMembership?.role,
+    "catalog-edit"
+  );
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -75,7 +80,9 @@ export default function ProductsPage() {
           setPage(1);
         }}
         onCreate={() => setCreateDialogOpen(true)}
-        canCreate={Boolean(businessPublicId)}
+        canCreate={Boolean(
+          businessPublicId && canEditCatalog
+        )}
       />
 
       {productsQuery.isLoading && (

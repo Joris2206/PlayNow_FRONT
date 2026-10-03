@@ -1,4 +1,5 @@
 import { apiUrl } from "@/lib/api";
+import { extractDrfErrorMessage } from "@/lib/api-error";
 import {
   getSessionGeneration,
   isCurrentSession,
@@ -313,23 +314,7 @@ function getErrorMessage(
   data: unknown,
   status: number
 ): string {
-  if (
-    typeof data === "object" &&
-    data !== null &&
-    "detail" in data &&
-    typeof data.detail === "string"
-  ) {
-    return data.detail;
-  }
-
-  if (
-    typeof data === "string" &&
-    data.length > 0
-  ) {
-    return data;
-  }
-
-  return `Error HTTP ${status}`;
+  return extractDrfErrorMessage(data) ?? `Error HTTP ${status}`;
 }
 
 export const http = {

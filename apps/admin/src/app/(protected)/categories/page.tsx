@@ -11,6 +11,7 @@ import {
 
 import { useAuth } from "@/providers/auth-provider";
 import { useCategories } from "@/hooks/use-categories";
+import { hasAccess } from "@/lib/permissions";
 
 import CategoriesTable from "@/components/categories/categories-table";
 import CategoriesToolbar from "@/components/categories/categories-toolbar";
@@ -26,6 +27,10 @@ export default function CategoriesPage() {
 
   const businessPublicId =
     activeMembership?.business_public_id;
+  const canEditCatalog = hasAccess(
+    activeMembership?.role,
+    "catalog-edit"
+  );
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(
@@ -72,7 +77,9 @@ export default function CategoriesPage() {
           setPage(1);
         }}
         onCreate={() => setCreateDialogOpen(true)}
-        canCreate={Boolean(businessPublicId)}
+        canCreate={Boolean(
+          businessPublicId && canEditCatalog
+        )}
       />
 
       {categoriesQuery.isLoading && (

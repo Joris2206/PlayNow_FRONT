@@ -1,4 +1,5 @@
 import { formatSaleDate, formatSaleMoney } from "@/components/sales/sales-format";
+import { extractDrfErrorMessage, getApiErrorMessage } from "@/lib/api-error";
 import { HttpError } from "@/lib/http";
 
 const API_FIELD_LABELS: Record<string, string> = {
@@ -15,34 +16,6 @@ const API_FIELD_LABELS: Record<string, string> = {
   non_field_errors: "Validación",
 };
 
-function firstString(value: unknown): string | null {
-  if (typeof value === "string") {
-    return value;
-  }
-
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      const message = firstString(item);
-
-      if (message) {
-        return message;
-      }
-    }
-  }
-
-  if (typeof value === "object" && value !== null) {
-    for (const item of Object.values(value)) {
-      const message = firstString(item);
-
-      if (message) {
-        return message;
-      }
-    }
-  }
-
-  return null;
-}
-
 export function getExpenseErrorMessage(
   error: unknown,
   fallback: string
@@ -53,14 +26,14 @@ export function getExpenseErrorMessage(
 
   if (typeof error.data === "object" && error.data !== null) {
     const data = error.data as Record<string, unknown>;
-    const detail = firstString(data.detail);
+    const detail = extractDrfErrorMessage(data.detail);
 
     if (detail) {
       return detail;
     }
 
     for (const [field, value] of Object.entries(data)) {
-      const message = firstString(value);
+      const message = extractDrfErrorMessage(value);
 
       if (message) {
         return `${API_FIELD_LABELS[field] ?? field}: ${message}`;
@@ -80,7 +53,7 @@ export function getExpenseErrorMessage(
     return "El gasto cambió mientras realizabas la operación. Actualizamos la información disponible.";
   }
 
-  return error.message || fallback;
+  return getApiErrorMessage(error, fallback);
 }
 
 export const formatExpenseDate = formatSaleDate;

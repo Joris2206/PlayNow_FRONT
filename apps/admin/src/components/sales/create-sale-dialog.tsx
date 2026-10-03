@@ -9,6 +9,7 @@ import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { productKeys } from "@/hooks/use-products";
 import { useCreateSale, useRefreshSaleEffects } from "@/hooks/use-transactions";
 import { findStatusByName } from "@/lib/catalog-status";
+import { extractDrfErrorMessage, getApiErrorMessage } from "@/lib/api-error";
 import { HttpError } from "@/lib/http";
 import { Button } from "@/components/ui/button";
 import CreateCustomerDialog from "@/components/customers/create-customer-dialog";
@@ -43,38 +44,21 @@ type Props = {
   onCreated: () => void;
 };
 
-function firstString(value: unknown): string | null {
-  if (typeof value === "string") return value;
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      const message = firstString(item);
-      if (message) return message;
-    }
-  }
-  if (typeof value === "object" && value !== null) {
-    for (const item of Object.values(value)) {
-      const message = firstString(item);
-      if (message) return message;
-    }
-  }
-  return null;
-}
-
 function firstApiMessage(error: unknown) {
   if (!(error instanceof HttpError) || typeof error.data !== "object" || error.data === null) {
-    return error instanceof Error ? error.message : "No fue posible registrar la venta.";
+    return getApiErrorMessage(error, "No fue posible registrar la venta.");
   }
   const data = error.data as Record<string, unknown>;
   const preferred = data.details ?? data.detail;
-  const preferredMessage = firstString(preferred);
+  const preferredMessage = extractDrfErrorMessage(preferred);
   if (preferredMessage) return preferredMessage;
   for (const [field, value] of Object.entries(data)) {
-    const message = firstString(value);
+    const message = extractDrfErrorMessage(value);
     if (message) return `${API_FIELD_LABELS[field] ?? field}: ${message}`;
   }
   if (error.status === 403) return "No tienes permisos para registrar esta venta.";
   if (error.status === 404) return "Uno de los recursos seleccionados ya no está disponible para este negocio.";
-  return error.status === 409 ? "La operación cambió mientras registrabas la venta. Revisa los datos e inténtalo nuevamente." : error.message;
+  return error.status === 409 ? "La operación cambió mientras registrabas la venta. Revisa los datos e inténtalo nuevamente." : getApiErrorMessage(error, "No fue posible registrar la venta.");
 }
 
 export default function CreateSaleDialog({ businessPublicId, initialEmployeePublicId, open, onOpenChange, onCreated }: Props) {

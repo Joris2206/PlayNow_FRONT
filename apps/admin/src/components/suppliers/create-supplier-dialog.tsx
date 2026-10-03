@@ -3,6 +3,7 @@
 import { type FormEvent, useEffect, useState } from "react";
 import { LoaderCircle } from "lucide-react";
 import { useCreateSupplier } from "@/hooks/use-suppliers";
+import { extractDrfFieldError } from "@/lib/api-error";
 import { HttpError } from "@/lib/http";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -18,11 +19,9 @@ type Props = {
 type Field = "name" | "phone" | "email";
 
 function getApiFieldError(error: unknown, field: string) {
-  if (!(error instanceof HttpError) || typeof error.data !== "object" || error.data === null || !(field in error.data)) return null;
-  const value = (error.data as Record<string, unknown>)[field];
-  if (typeof value === "string") return value;
-  if (Array.isArray(value) && typeof value[0] === "string") return value[0];
-  return null;
+  return error instanceof HttpError
+    ? extractDrfFieldError(error.data, field)
+    : null;
 }
 
 function isValidEmail(value: string) {

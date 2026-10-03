@@ -1,4 +1,5 @@
 import AuthGuard from "@/components/auth/auth-guard";
+import AdminRouteGuard from "@/components/auth/admin-route-guard";
 import AdminLayout from "@/components/admin/admin-layout";
 import AuthProvider from "@/providers/auth-provider";
 
@@ -13,7 +14,9 @@ export default function ProtectedLayout({
     <AuthProvider>
       <AuthGuard>
         <AdminLayout>
-          {children}
+          <AdminRouteGuard>
+            {children}
+          </AdminRouteGuard>
         </AdminLayout>
       </AuthGuard>
     </AuthProvider>

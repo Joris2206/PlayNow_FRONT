@@ -9,7 +9,6 @@ import {
 import { LoaderCircle } from "lucide-react";
 
 import { useCreateCashMovement } from "@/hooks/use-cash-movements";
-import { useEmployees } from "@/hooks/use-employees";
 import { useEntityStatuses } from "@/hooks/use-entity-statuses";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { findStatusByName } from "@/lib/catalog-status";
@@ -21,6 +20,7 @@ import {
   EMPLOYEE_REQUIRED_MOVEMENT_TYPES,
   getCashErrorMessage,
 } from "@/components/cash/cash-format";
+import CashEmployeeSelectorDialog from "@/components/cash/cash-employee-selector-dialog";
 import { PAYMENT_METHOD_TYPE_LABELS } from "@/components/payment-methods/payment-methods-format";
 import { Button } from "@/components/ui/button";
 import {
@@ -56,11 +56,12 @@ export default function CreateCashMovementDialog({
     useState<CashMovementType | "">("");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
-  const [employeePage, setEmployeePage] = useState(1);
   const [employeePublicId, setEmployeePublicId] =
     useState("");
   const [selectedEmployee, setSelectedEmployee] =
     useState<EmployeeOption | null>(null);
+  const [employeeSelectorOpen, setEmployeeSelectorOpen] =
+    useState(false);
   const [paymentMethodPage, setPaymentMethodPage] =
     useState(1);
   const [paymentMethodPublicId, setPaymentMethodPublicId] =
@@ -82,16 +83,6 @@ export default function CreateCashMovementDialog({
     statusesQuery.data?.results ?? [],
     "Activo"
   );
-  const employeesQuery = useEmployees({
-    businessPublicId:
-      open && employeeRequired && activeStatus
-        ? businessPublicId
-        : undefined,
-    page: employeePage,
-    pageSize: SELECT_PAGE_SIZE,
-    ordering: "full_name",
-    statusPublicId: activeStatus?.public_id,
-  });
   const paymentMethodsQuery = usePaymentMethods({
     businessPublicId: open ? businessPublicId : undefined,
     page: paymentMethodPage,
@@ -107,9 +98,9 @@ export default function CreateCashMovementDialog({
     setMovementType("");
     setAmount("");
     setNote("");
-    setEmployeePage(1);
     setEmployeePublicId("");
     setSelectedEmployee(null);
+    setEmployeeSelectorOpen(false);
     setPaymentMethodPage(1);
     setPaymentMethodPublicId("");
     setSelectedPaymentMethod(null);
@@ -121,18 +112,6 @@ export default function CreateCashMovementDialog({
     open,
     resetCreateMovement,
   ]);
-
-  const employees = useMemo(() => {
-    const listed = employeesQuery.data?.results ?? [];
-
-    return selectedEmployee &&
-      !listed.some(
-        (employee) =>
-          employee.public_id === selectedEmployee.public_id
-      )
-      ? [selectedEmployee, ...listed]
-      : listed;
-  }, [employeesQuery.data, selectedEmployee]);
 
   const paymentMethods = useMemo(() => {
     const listed = paymentMethodsQuery.data?.results ?? [];
@@ -245,6 +224,7 @@ export default function CreateCashMovementDialog({
                 ) {
                   setEmployeePublicId("");
                   setSelectedEmployee(null);
+                  setEmployeeSelectorOpen(false);
                 }
               }}
               disabled={createMovement.isPending}
@@ -292,49 +272,67 @@ export default function CreateCashMovementDialog({
           </div>
 
           {employeeRequired && (
-            <div className="space-y-2">
-              <label htmlFor="cash-movement-employee" className="text-sm font-medium text-zinc-300">
+            <section
+              className="space-y-2"
+              aria-labelledby="cash-movement-employee-label"
+              aria-describedby={attemptedSubmit && !employeePublicId ? "cash-movement-employee-error" : undefined}
+            >
+              <h3 id="cash-movement-employee-label" className="text-sm font-medium text-zinc-300">
                 Empleado
-              </label>
-              <select
-                id="cash-movement-employee"
-                value={employeePublicId}
-                onChange={(event) => {
-                  const publicId = event.target.value;
-                  setEmployeePublicId(publicId);
-                  setSelectedEmployee(
-                    employees.find(
-                      (employee) => employee.public_id === publicId
-                    ) ?? null
-                  );
-                }}
-                disabled={employeesQuery.isLoading || createMovement.isPending}
-                aria-invalid={attemptedSubmit && !employeePublicId}
-                className="h-11 w-full rounded-md border border-white/10 bg-zinc-950 px-3 text-sm text-white outline-none focus:border-red-500 focus:ring-3 focus:ring-red-500/20 disabled:opacity-50"
-              >
-                <option value="">
-                  {employeesQuery.isLoading
-                    ? "Cargando empleados..."
-                    : "Selecciona un empleado"}
-                </option>
-                {employees.map((employee) => (
-                  <option key={employee.public_id} value={employee.public_id}>
-                    {employee.full_name} · {employee.position}
-                  </option>
-                ))}
-              </select>
+              </h3>
+              <div className={`flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between ${
+                attemptedSubmit && !employeePublicId
+                  ? "border-red-500/50 bg-red-500/5"
+                  : employeePublicId
+                    ? "border-white/10 bg-white/[0.02]"
+                    : "border-dashed border-white/10 bg-white/[0.02]"
+              }`}>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                    {employeePublicId ? "Empleado seleccionado" : "Sin empleado seleccionado"}
+                  </p>
+                  {selectedEmployee && (
+                    <>
+                      <p className="mt-1 truncate text-sm font-medium text-white">{selectedEmployee.full_name}</p>
+                      {selectedEmployee.position && (
+                        <p className="mt-1 truncate text-xs text-zinc-400">{selectedEmployee.position}</p>
+                      )}
+                    </>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2 sm:justify-end">
+                  <Button
+                    type="button"
+                    variant="inverseOutline"
+                    size={employeePublicId ? "sm" : "default"}
+                    onClick={() => setEmployeeSelectorOpen(true)}
+                    disabled={!businessPublicId || !activeStatus || createMovement.isPending}
+                    aria-invalid={attemptedSubmit && !employeePublicId}
+                  >
+                    {employeePublicId ? "Cambiar" : "Seleccionar empleado"}
+                  </Button>
+                  {employeePublicId && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setEmployeePublicId("");
+                        setSelectedEmployee(null);
+                      }}
+                      disabled={createMovement.isPending}
+                      aria-label="Quitar empleado del movimiento de caja"
+                      className="text-zinc-400 hover:bg-white/5 hover:text-white"
+                    >
+                      Quitar
+                    </Button>
+                  )}
+                </div>
+              </div>
               {attemptedSubmit && !employeePublicId && (
-                <p className="text-xs text-red-400">
+                <p id="cash-movement-employee-error" className="text-xs text-red-400">
                   Este tipo de movimiento requiere un empleado.
                 </p>
-              )}
-              {employeesQuery.isError && (
-                <div className="flex items-center justify-between gap-3 text-sm text-red-300">
-                  <span>No fue posible cargar los empleados.</span>
-                  <Button type="button" variant="ghost" size="sm" onClick={() => employeesQuery.refetch()}>
-                    Reintentar
-                  </Button>
-                </div>
               )}
               {statusesQuery.isError && (
                 <p role="alert" className="text-sm text-red-300">
@@ -346,20 +344,7 @@ export default function CreateCashMovementDialog({
                   No existe el estado Activo necesario para consultar empleados.
                 </p>
               )}
-              {employeesQuery.data && employeesQuery.data.total_pages > 1 && (
-                <div className="flex items-center justify-end gap-2">
-                  <Button type="button" variant="outline" size="sm" disabled={!employeesQuery.data.previous || createMovement.isPending} onClick={() => setEmployeePage((current) => Math.max(1, current - 1))} className="border-white/10 bg-transparent text-zinc-300">
-                    Anterior
-                  </Button>
-                  <span className="text-xs text-zinc-500">
-                    Página {employeesQuery.data.current_page} de {employeesQuery.data.total_pages}
-                  </span>
-                  <Button type="button" variant="outline" size="sm" disabled={!employeesQuery.data.next || createMovement.isPending} onClick={() => setEmployeePage((current) => current + 1)} className="border-white/10 bg-transparent text-zinc-300">
-                    Siguiente
-                  </Button>
-                </div>
-              )}
-            </div>
+            </section>
           )}
 
           <div className="space-y-2">
@@ -451,6 +436,19 @@ export default function CreateCashMovementDialog({
             </Button>
           </DialogFooter>
         </form>
+        <CashEmployeeSelectorDialog
+          businessPublicId={businessPublicId}
+          activeStatusPublicId={activeStatus?.public_id}
+          selectedEmployeePublicId={employeePublicId}
+          selectedEmployee={selectedEmployee}
+          open={employeeSelectorOpen}
+          disabled={createMovement.isPending}
+          onOpenChange={setEmployeeSelectorOpen}
+          onSelect={(employee) => {
+            setSelectedEmployee(employee);
+            setEmployeePublicId(employee.public_id);
+          }}
+        />
       </DialogContent>
     </Dialog>
   );

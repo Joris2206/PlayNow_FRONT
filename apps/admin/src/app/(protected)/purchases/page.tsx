@@ -29,6 +29,7 @@ export default function PurchasesPage() {
   const transactionsQuery = useTransactions({ businessPublicId, type: "purchase", page, pageSize, search, ordering: "-created_at" });
   const data = transactionsQuery.data;
   const canCreate = Boolean(businessPublicId && hasAccess(activeMembership?.role, "purchases-create"));
+  const canCreateSupplier = Boolean(businessPublicId && hasAccess(activeMembership?.role, "suppliers-create"));
 
   return <div className="mx-auto max-w-7xl space-y-6">
     <PageHeader eyebrow="Compras" title="Purchases" description="Registra compras pagadas, pendientes o parciales y consulta las entradas de inventario de tu negocio." />
@@ -36,6 +37,6 @@ export default function PurchasesPage() {
     {transactionsQuery.isLoading && <div className="flex min-h-80 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03]"><div className="flex flex-col items-center gap-4"><LoaderCircle className="h-7 w-7 animate-spin text-red-500" /><p className="text-sm text-zinc-500">Cargando compras...</p></div></div>}
     {transactionsQuery.isError && <div className="flex min-h-56 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/5 px-6"><div className="text-center"><AlertCircle className="mx-auto h-7 w-7 text-red-400" /><h3 className="mt-4 font-medium text-white">No pudimos cargar las compras</h3><p className="mt-2 text-sm text-zinc-500">Verifica tu conexión e intenta nuevamente.</p><Button type="button" variant="outline" onClick={() => transactionsQuery.refetch()} className="mt-5 border-white/10 bg-transparent text-white hover:bg-white/5">Reintentar</Button></div></div>}
     {transactionsQuery.isSuccess && data && <><PurchasesTable transactions={data.results} /><ListPagination count={data.count} singularLabel="compra" pluralLabel="compras" currentPage={data.current_page} totalPages={data.total_pages} hasPrevious={Boolean(data.previous)} hasNext={Boolean(data.next)} onPageChange={setPage} /></>}
-    <CreatePurchaseDialog businessPublicId={businessPublicId} open={createOpen} onOpenChange={setCreateOpen} onCreated={() => setPage(1)} />
+    <CreatePurchaseDialog businessPublicId={businessPublicId} canCreateSupplier={canCreateSupplier} open={createOpen} onOpenChange={setCreateOpen} onCreated={() => setPage(1)} />
   </div>;
 }

@@ -8,6 +8,7 @@ import {
 import { LoaderCircle } from "lucide-react";
 
 import { useCreateCustomer } from "@/hooks/use-customers";
+import { extractDrfFieldError } from "@/lib/api-error";
 import { HttpError } from "@/lib/http";
 
 import { Button } from "@/components/ui/button";
@@ -33,21 +34,9 @@ type Props = {
 type Field = "fullName" | "phone" | "email";
 
 function getApiFieldError(error: unknown, field: string) {
-  if (
-    !(error instanceof HttpError) ||
-    typeof error.data !== "object" ||
-    error.data === null ||
-    !(field in error.data)
-  ) {
-    return null;
-  }
-
-  const value = (error.data as Record<string, unknown>)[field];
-  if (typeof value === "string") return value;
-  if (Array.isArray(value) && typeof value[0] === "string") {
-    return value[0];
-  }
-  return null;
+  return error instanceof HttpError
+    ? extractDrfFieldError(error.data, field)
+    : null;
 }
 
 function isValidEmail(value: string) {

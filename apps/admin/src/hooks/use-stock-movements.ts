@@ -71,6 +71,10 @@ export function useStockMovements(
       businessPublicId && productPublicId
     ),
 
-    placeholderData: (previousData) => previousData,
+    placeholderData: (previousData, previousQuery) =>
+      previousQuery?.queryKey[1] === businessPublicId &&
+      previousQuery?.queryKey[2] === productPublicId
+        ? previousData
+        : undefined,
   });
 }

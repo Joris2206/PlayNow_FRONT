@@ -1,9 +1,10 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { cashRegisterKeys } from "@/hooks/cash-query-keys";
+import { cashMovementKeys, cashRegisterKeys } from "@/hooks/cash-query-keys";
 import { commissionKeys } from "@/hooks/commission-query-keys";
 import { dashboardKeys } from "@/hooks/use-dashboard";
+import { debtKeys } from "@/hooks/use-debts";
 import { productKeys } from "@/hooks/use-products";
 import { reportKeys } from "@/hooks/use-reports";
 import { stockMovementKeys } from "@/hooks/use-stock-movements";
@@ -65,6 +66,8 @@ function invalidateTransactionEffects(
     queryClient.invalidateQueries({ queryKey: transactionKeys.byBusiness(businessPublicId) }),
     queryClient.invalidateQueries({ queryKey: productKeys.byBusiness(businessPublicId) }),
     queryClient.invalidateQueries({ queryKey: stockMovementKeys.byBusiness(businessPublicId) }),
+    queryClient.invalidateQueries({ queryKey: debtKeys.lists(businessPublicId) }),
+    queryClient.invalidateQueries({ queryKey: cashMovementKeys.byBusiness(businessPublicId) }),
     queryClient.invalidateQueries({ queryKey: cashRegisterKeys.previews(businessPublicId) }),
     queryClient.invalidateQueries({ queryKey: dashboardKeys.byBusiness(businessPublicId) }),
     queryClient.invalidateQueries({ queryKey: reportKeys.paymentsScope(businessPublicId) }),
@@ -84,6 +87,7 @@ function invalidateTransactionEffects(
 function invalidateExpenseEffects(queryClient: ReturnType<typeof useQueryClient>, businessPublicId: string) {
   return Promise.all([
     queryClient.invalidateQueries({ queryKey: transactionKeys.byBusiness(businessPublicId) }),
+    queryClient.invalidateQueries({ queryKey: cashMovementKeys.byBusiness(businessPublicId) }),
     queryClient.invalidateQueries({ queryKey: cashRegisterKeys.previews(businessPublicId) }),
     queryClient.invalidateQueries({ queryKey: dashboardKeys.byBusiness(businessPublicId) }),
     queryClient.invalidateQueries({ queryKey: reportKeys.paymentsScope(businessPublicId) }),

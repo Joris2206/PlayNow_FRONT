@@ -14,6 +14,7 @@ import {
   useCreateProduct,
   useUpdateProduct,
 } from "@/hooks/use-products";
+import { extractDrfFieldError, getApiErrorMessage } from "@/lib/api-error";
 import { HttpError } from "@/lib/http";
 
 import CreateCategoryDialog from "@/components/categories/create-category-dialog";
@@ -106,56 +107,9 @@ function getApiFieldError(
   error: unknown,
   field: string
 ) {
-  if (
-    !(error instanceof HttpError) ||
-    typeof error.data !== "object" ||
-    error.data === null ||
-    !(field in error.data)
-  ) {
-    return null;
-  }
-
-  const value = (
-    error.data as Record<string, unknown>
-  )[field];
-
-  if (typeof value === "string") {
-    return value;
-  }
-
-  if (
-    Array.isArray(value) &&
-    typeof value[0] === "string"
-  ) {
-    return value[0];
-  }
-
-  return null;
-}
-
-function getFirstApiError(error: unknown) {
-  if (
-    !(error instanceof HttpError) ||
-    typeof error.data !== "object" ||
-    error.data === null
-  ) {
-    return null;
-  }
-
-  for (const value of Object.values(error.data)) {
-    if (typeof value === "string") {
-      return value;
-    }
-
-    if (
-      Array.isArray(value) &&
-      typeof value[0] === "string"
-    ) {
-      return value[0];
-    }
-  }
-
-  return null;
+  return error instanceof HttpError
+    ? extractDrfFieldError(error.data, field)
+    : null;
 }
 
 function isValidUrl(value: string) {
@@ -488,10 +442,10 @@ function ProductDialog({
     ) ?? apiErrors.businessPublicId;
   const errorMessage = nonFieldError ??
     (mutationError && !hasApiFieldErrors
-      ? getFirstApiError(mutationError) ??
-        (mutationError instanceof Error
-          ? mutationError.message
-          : "No fue posible guardar el producto. Intenta nuevamente.")
+      ? getApiErrorMessage(
+          mutationError,
+          "No fue posible guardar el producto. Intenta nuevamente."
+        )
       : null);
 
   return (
