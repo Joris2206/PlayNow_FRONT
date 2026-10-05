@@ -8,9 +8,12 @@ import {
 
 import { dashboardKeys } from "@/hooks/use-dashboard";
 import { reportKeys } from "@/hooks/use-reports";
+import { stockMovementKeys } from "@/hooks/use-stock-movements";
+import { HttpError } from "@/lib/http";
 import { productService } from "@/services/product-service";
 
 import type {
+  AdjustProductStockRequest,
   CreateProductRequest,
   UpdateProductRequest,
 } from "@/types/product";
@@ -167,5 +170,65 @@ export function useDeleteProduct() {
         queryKey: reportKeys.inventoryScope(variables.businessPublicId),
       }),
     ]),
+  });
+}
+
+type AdjustProductStockVariables = {
+  productPublicId: string;
+  businessPublicId: string;
+  input: AdjustProductStockRequest;
+};
+
+export function useAdjustProductStock() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      productPublicId,
+      input,
+    }: AdjustProductStockVariables) =>
+      productService.adjustStock(
+        productPublicId,
+        input
+      ),
+
+    retry: false,
+
+    onSuccess: (_response, variables) =>
+      Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: productKeys.byBusiness(
+            variables.businessPublicId
+          ),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: stockMovementKeys.byBusiness(
+            variables.businessPublicId
+          ),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: dashboardKeys.byBusiness(
+            variables.businessPublicId
+          ),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: reportKeys.inventoryScope(
+            variables.businessPublicId
+          ),
+        }),
+      ]),
+
+    onError: (error, variables) => {
+      if (
+        error instanceof HttpError &&
+        (error.status === 400 || error.status === 404)
+      ) {
+        return queryClient.invalidateQueries({
+          queryKey: productKeys.byBusiness(
+            variables.businessPublicId
+          ),
+        });
+      }
+    },
   });
 }

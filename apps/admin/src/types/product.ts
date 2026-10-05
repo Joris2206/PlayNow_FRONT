@@ -1,4 +1,5 @@
 import type { BusinessListQueryParams } from "@/types/api";
+import type { StockMovement } from "@/types/stock-movement";
 
 export type Product = {
   public_id: string;
@@ -43,4 +44,15 @@ export type UpdateProductRequest = {
   base_cost?: string;
   is_visible?: boolean;
   status_public_id?: string;
+};
+
+export type AdjustProductStockRequest = {
+  quantity: number;
+  note: string;
+};
+
+export type AdjustProductStockResponse = {
+  previous_stock: number;
+  new_stock: number;
+  movement: StockMovement;
 };

@@ -23,6 +23,11 @@ const ADMIN_ACCESS_ROLES = {
     ROLES.INVENTORY,
     ROLES.VIEWER,
   ],
+  "inventory-adjust": [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+    ROLES.INVENTORY,
+  ],
   sales: [
     ROLES.OWNER,
     ROLES.ADMIN,

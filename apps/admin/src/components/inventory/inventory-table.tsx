@@ -3,9 +3,13 @@
 import {
   History,
   PackageSearch,
+  SlidersHorizontal,
 } from "lucide-react";
 
-import { getCatalogStatusClassName } from "@/lib/catalog-status";
+import {
+  getCatalogStatusClassName,
+  isActiveCatalogStatus,
+} from "@/lib/catalog-status";
 import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
@@ -23,11 +27,15 @@ import type { Product } from "@/types/product";
 type InventoryTableProps = {
   products: Product[];
   onViewMovements: (product: Product) => void;
+  canAdjustStock: boolean;
+  onAdjustStock: (product: Product) => void;
 };
 
 export default function InventoryTable({
   products,
   onViewMovements,
+  canAdjustStock,
+  onAdjustStock,
 }: InventoryTableProps) {
   if (products.length === 0) {
     return (
@@ -69,7 +77,7 @@ export default function InventoryTable({
             </TableHead>
 
             <TableHead className="h-auto px-5 py-4 text-right font-medium text-zinc-500">
-              Historial
+              Acciones
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -106,18 +114,38 @@ export default function InventoryTable({
               </TableCell>
 
               <TableCell className="px-5 py-4 text-right">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    onViewMovements(product)
-                  }
-                  className="border-white/10 bg-transparent text-zinc-300 hover:bg-white/10 hover:text-white"
-                >
-                  <History className="h-4 w-4" />
-                  Ver movimientos
-                </Button>
+                <div className="flex justify-end gap-2">
+                  {canAdjustStock &&
+                    isActiveCatalogStatus(
+                      product.status_name
+                    ) && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          onAdjustStock(product)
+                        }
+                        className="border-white/10 bg-transparent text-zinc-300 hover:bg-white/10 hover:text-white"
+                      >
+                        <SlidersHorizontal className="h-4 w-4" />
+                        Ajustar stock
+                      </Button>
+                    )}
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      onViewMovements(product)
+                    }
+                    className="border-white/10 bg-transparent text-zinc-300 hover:bg-white/10 hover:text-white"
+                  >
+                    <History className="h-4 w-4" />
+                    Ver movimientos
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}

@@ -6,6 +6,8 @@ import type {
 } from "@/types/api";
 
 import type {
+  AdjustProductStockRequest,
+  AdjustProductStockResponse,
   CreateProductRequest,
   Product,
   ProductListParams,
@@ -55,6 +57,16 @@ export const productService = {
   delete(publicId: string): Promise<void> {
     return http.delete<void>(
       `/api/products/${publicId}/`
+    );
+  },
+
+  adjustStock(
+    publicId: string,
+    data: AdjustProductStockRequest
+  ): Promise<AdjustProductStockResponse> {
+    return http.post<AdjustProductStockResponse>(
+      `/api/products/${publicId}/adjust-stock/`,
+      data
     );
   },
 };

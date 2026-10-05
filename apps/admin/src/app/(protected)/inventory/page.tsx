@@ -10,9 +10,11 @@ import {
 } from "lucide-react";
 
 import { useProducts } from "@/hooks/use-products";
+import { hasAccess } from "@/lib/permissions";
 import { useAuth } from "@/providers/auth-provider";
 
 import InventoryTable from "@/components/inventory/inventory-table";
+import AdjustStockDialog from "@/components/inventory/adjust-stock-dialog";
 import InventoryToolbar, {
   type InventoryOrdering,
 } from "@/components/inventory/inventory-toolbar";
@@ -22,6 +24,11 @@ import PageHeader from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 
 import type { Product } from "@/types/product";
+
+type AdjustmentSelection = {
+  product: Product;
+  originBusinessPublicId: string;
+};
 
 const DEFAULT_PAGE_SIZE = 20;
 
@@ -41,6 +48,22 @@ export default function InventoryPage() {
   const [search, setSearch] = useState("");
   const [historyProduct, setHistoryProduct] =
     useState<Product | null>(null);
+  const [adjustmentSelection, setAdjustmentSelection] =
+    useState<AdjustmentSelection | null>(null);
+  const [successMessage, setSuccessMessage] =
+    useState<string | null>(null);
+
+  useEffect(() => {
+    setAdjustmentSelection((currentSelection) =>
+      currentSelection &&
+      currentSelection.originBusinessPublicId !==
+        businessPublicId
+        ? null
+        : currentSelection
+    );
+
+    setSuccessMessage(null);
+  }, [businessPublicId]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -84,6 +107,15 @@ export default function InventoryPage() {
         }}
       />
 
+      {successMessage && (
+        <div
+          role="status"
+          className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300"
+        >
+          {successMessage}
+        </div>
+      )}
+
       {productsQuery.isLoading && (
         <div className="flex min-h-80 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03]">
           <div className="flex flex-col items-center gap-4">
@@ -122,6 +154,20 @@ export default function InventoryPage() {
           <InventoryTable
             products={data.results}
             onViewMovements={setHistoryProduct}
+            canAdjustStock={hasAccess(
+              activeMembership?.role,
+              "inventory-adjust"
+            )}
+            onAdjustStock={(product) => {
+              if (!businessPublicId) return;
+
+              setSuccessMessage(null);
+              setAdjustmentSelection({
+                product,
+                originBusinessPublicId:
+                  businessPublicId,
+              });
+            }}
           />
 
           <ListPagination
@@ -145,6 +191,22 @@ export default function InventoryPage() {
           if (!open) {
             setHistoryProduct(null);
           }
+        }}
+      />
+
+      <AdjustStockDialog
+        selection={adjustmentSelection}
+        currentBusinessPublicId={businessPublicId}
+        open={Boolean(adjustmentSelection)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAdjustmentSelection(null);
+          }
+        }}
+        onAdjusted={(response) => {
+          setSuccessMessage(
+            `Stock actualizado de ${response.previous_stock} a ${response.new_stock}.`
+          );
         }}
       />
     </div>

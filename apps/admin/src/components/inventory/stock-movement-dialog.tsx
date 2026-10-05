@@ -151,7 +151,7 @@ export default function StockMovementDialog({
               </div>
             ) : (
               <div className="overflow-hidden rounded-xl border border-white/10">
-                <Table className="min-w-[640px]">
+                <Table className="min-w-[800px]">
                   <TableHeader className="bg-white/[0.02]">
                     <TableRow className="border-white/10 hover:bg-transparent">
                       <TableHead className="px-4 text-zinc-500">
@@ -162,6 +162,9 @@ export default function StockMovementDialog({
                       </TableHead>
                       <TableHead className="px-4 text-right text-zinc-500">
                         Cantidad
+                      </TableHead>
+                      <TableHead className="px-4 text-zinc-500">
+                        Realizado por
                       </TableHead>
                       <TableHead className="px-4 text-zinc-500">
                         Origen
@@ -202,6 +205,10 @@ export default function StockMovementDialog({
                             ? "+"
                             : ""}
                           {movement.quantity}
+                        </TableCell>
+                        <TableCell className="px-4 text-zinc-300">
+                          {movement.created_by_email?.trim() ||
+                            "—"}
                         </TableCell>
                         <TableCell className="max-w-xs whitespace-normal px-4 py-3">
                           <p className="font-medium text-zinc-200">
