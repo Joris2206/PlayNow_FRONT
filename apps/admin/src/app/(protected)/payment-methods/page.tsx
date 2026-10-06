@@ -35,15 +35,21 @@ function listErrorMessage(error: unknown) {
 }
 
 export default function PaymentMethodsPage() {
-  const { activeMembership, isLoading: isAuthLoading } =
-    useAuth();
-  const businessPublicId =
-    activeMembership?.business_public_id;
-  const role = activeMembership?.role;
-  const canRead = hasAccess(role, "payment-methods");
-  const canManage = hasAccess(
+  const {
+    activeBusinessPublicId: businessPublicId,
+    isLoading: isAuthLoading,
+    isPlatformAdmin,
     role,
-    "payment-methods-write"
+  } = useAuth();
+  const canRead = hasAccess(
+    role ?? undefined,
+    "payment-methods",
+    isPlatformAdmin
+  );
+  const canManage = hasAccess(
+    role ?? undefined,
+    "payment-methods-write",
+    isPlatformAdmin
   );
 
   const [page, setPage] = useState(1);

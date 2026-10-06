@@ -17,8 +17,11 @@ import { Button } from "@/components/ui/button";
 const DEFAULT_PAGE_SIZE = 20;
 
 export default function CustomersPage() {
-  const { activeMembership } = useAuth();
-  const businessPublicId = activeMembership?.business_public_id;
+  const {
+    activeBusinessPublicId: businessPublicId,
+    isPlatformAdmin,
+    role,
+  } = useAuth();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [searchInput, setSearchInput] = useState("");
@@ -50,7 +53,11 @@ export default function CustomersPage() {
   const data = customersQuery.data;
   const canCreate = Boolean(
     businessPublicId &&
-      hasAccess(activeMembership?.role, "customers-create")
+      hasAccess(
+        role ?? undefined,
+        "customers-create",
+        isPlatformAdmin
+      )
   );
 
   return (

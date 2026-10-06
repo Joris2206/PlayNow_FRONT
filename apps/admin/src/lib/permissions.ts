@@ -40,7 +40,7 @@ const ADMIN_ACCESS = {
     ROLES.ADMIN,
     ROLES.CASHIER,
     ROLES.SELLER,
-  ], platformAdmin: false },
+  ], platformAdmin: true },
   "sales-cancel": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
@@ -57,7 +57,7 @@ const ADMIN_ACCESS = {
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.INVENTORY,
-  ], platformAdmin: false },
+  ], platformAdmin: true },
   "purchases-cancel": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
@@ -69,15 +69,15 @@ const ADMIN_ACCESS = {
     ROLES.SELLER,
     ROLES.INVENTORY,
     ROLES.VIEWER,
-  ], platformAdmin: false },
+  ], platformAdmin: true },
   "expenses-create": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
-  ], platformAdmin: false },
+  ], platformAdmin: true },
   "expenses-cancel": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
-  ], platformAdmin: false },
+  ], platformAdmin: true },
   "payment-methods": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
@@ -85,11 +85,11 @@ const ADMIN_ACCESS = {
     ROLES.SELLER,
     ROLES.INVENTORY,
     ROLES.VIEWER,
-  ], platformAdmin: false },
+  ], platformAdmin: true },
   "payment-methods-write": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
-  ], platformAdmin: false },
+  ], platformAdmin: true },
   employees: { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
@@ -104,24 +104,24 @@ const ADMIN_ACCESS = {
     ROLES.CASHIER,
     ROLES.SELLER,
     ROLES.VIEWER,
-  ], platformAdmin: false },
+  ], platformAdmin: true },
   "customers-create": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.CASHIER,
     ROLES.SELLER,
-  ], platformAdmin: false },
+  ], platformAdmin: true },
   suppliers: { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.INVENTORY,
     ROLES.VIEWER,
-  ], platformAdmin: false },
+  ], platformAdmin: true },
   "suppliers-create": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.INVENTORY,
-  ], platformAdmin: false },
+  ], platformAdmin: true },
   debts: { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
@@ -143,7 +143,7 @@ const ADMIN_ACCESS = {
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.VIEWER,
-  ], platformAdmin: false },
+  ], platformAdmin: true },
   reports: { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,

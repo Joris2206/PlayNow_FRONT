@@ -1,11 +1,9 @@
 import { http } from "@/lib/http";
 import {
+  establishAuthenticatedSession,
   isTokenPair,
-  prepareForLogin,
-  startSession,
   terminateSession,
 } from "@/lib/session";
-import { tokenStorage } from "@/lib/token-storage";
 
 import type {
   LoginRequest,
@@ -16,8 +14,6 @@ export const authService = {
   async login(
     credentials: LoginRequest
   ): Promise<LoginResponse> {
-    prepareForLogin();
-
     const response = await http.post<LoginResponse>(
       "/api/login/",
       credentials,
@@ -28,18 +24,21 @@ export const authService = {
     );
 
     if (!isTokenPair(response)) {
-      await terminateSession();
-
       throw new Error(
         "La respuesta de inicio de sesión no contiene tokens válidos."
       );
     }
 
-    startSession();
-    tokenStorage.setTokens(
+    const established = await establishAuthenticatedSession(
       response.access,
       response.refresh
     );
+
+    if (!established) {
+      throw new Error(
+        "La sesión cambió mientras se completaba el inicio de sesión."
+      );
+    }
 
     return response;
   },

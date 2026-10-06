@@ -18,16 +18,26 @@ import { Button } from "@/components/ui/button";
 const DEFAULT_PAGE_SIZE = 20;
 
 export default function ExpensesPage() {
-  const { activeMembership, isLoading: isAuthLoading } = useAuth();
-  const businessPublicId = activeMembership?.business_public_id;
-  const canRead = hasAccess(activeMembership?.role, "expenses");
+  const {
+    activeBusinessPublicId: businessPublicId,
+    isLoading: isAuthLoading,
+    isPlatformAdmin,
+    role,
+  } = useAuth();
+  const canRead = hasAccess(
+    role ?? undefined,
+    "expenses",
+    isPlatformAdmin
+  );
   const canCreate = hasAccess(
-    activeMembership?.role,
-    "expenses-create"
+    role ?? undefined,
+    "expenses-create",
+    isPlatformAdmin
   );
   const canCancel = hasAccess(
-    activeMembership?.role,
-    "expenses-cancel"
+    role ?? undefined,
+    "expenses-cancel",
+    isPlatformAdmin
   );
 
   const [page, setPage] = useState(1);

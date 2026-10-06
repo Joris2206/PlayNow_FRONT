@@ -1,10 +1,14 @@
 import { apiUrl } from "@/lib/api";
 import { extractDrfErrorMessage } from "@/lib/api-error";
 import {
+  getAuthSessionSnapshot,
   getSessionGeneration,
+  isCurrentAuthRevision,
   isCurrentSession,
   isTokenPair,
+  supportsAuthSessionLock,
   terminateSession,
+  withAuthSessionLock,
 } from "@/lib/session";
 import { tokenStorage } from "@/lib/token-storage";
 
@@ -38,8 +42,15 @@ type ExecutedRequest = {
 
 type RefreshState = {
   generation: number;
-  promise: Promise<boolean>;
+  revision: string;
+  promise: Promise<RefreshResolution>;
 };
+
+type RefreshResolution =
+  | "refreshed"
+  | "tokens-updated"
+  | "session-changed"
+  | "failed";
 
 let refreshState: RefreshState | null = null;
 
@@ -48,6 +59,8 @@ async function request<T>(
   options: RequestOptions = {}
 ): Promise<T> {
   const sessionGeneration = getSessionGeneration();
+  const sessionRevision =
+    getAuthSessionSnapshot()?.revision ?? null;
 
   const {
     skipAuth = false,
@@ -66,7 +79,11 @@ async function request<T>(
     !skipRefresh &&
     !skipAuth
   ) {
-    if (!isCurrentSession(sessionGeneration)) {
+    if (
+      !sessionRevision ||
+      !isCurrentSession(sessionGeneration) ||
+      !isCurrentAuthRevision(sessionRevision)
+    ) {
       return handleResponse<T>(initialRequest.response);
     }
 
@@ -85,18 +102,25 @@ async function request<T>(
         );
 
       return handleAuthenticatedRetry<T>(
-        retryWithCurrentToken.response,
-        sessionGeneration
+        retryWithCurrentToken,
+        sessionGeneration,
+        sessionRevision
       );
     }
 
-    const refreshed = await refreshAccessToken(
-      sessionGeneration
+    const refreshToken = tokenStorage.getRefreshToken();
+    const refreshResolution = await refreshAccessToken(
+      sessionGeneration,
+      sessionRevision,
+      initialRequest.accessToken,
+      refreshToken
     );
 
     if (
-      refreshed &&
-      isCurrentSession(sessionGeneration)
+      (refreshResolution === "refreshed" ||
+        refreshResolution === "tokens-updated") &&
+      isCurrentSession(sessionGeneration) &&
+      isCurrentAuthRevision(sessionRevision)
     ) {
       const retryResponse = await executeRequest(
         endpoint,
@@ -105,8 +129,9 @@ async function request<T>(
       );
 
       return handleAuthenticatedRetry<T>(
-        retryResponse.response,
-        sessionGeneration
+        retryResponse,
+        sessionGeneration,
+        sessionRevision
       );
     }
   }
@@ -115,17 +140,22 @@ async function request<T>(
 }
 
 async function handleAuthenticatedRetry<T>(
-  response: Response,
-  generation: number
+  request: ExecutedRequest,
+  generation: number,
+  revision: string
 ): Promise<T> {
   if (
-    response.status === 401 &&
-    isCurrentSession(generation)
+    request.response.status === 401 &&
+    isCurrentSession(generation) &&
+    isCurrentAuthRevision(revision) &&
+    tokenStorage.getAccessToken() === request.accessToken
   ) {
-    await terminateSession();
+    await terminateSession({
+      expectedRevision: revision,
+    });
   }
 
-  return handleResponse<T>(response);
+  return handleResponse<T>(request.response);
 }
 
 async function executeRequest(
@@ -172,20 +202,44 @@ async function executeRequest(
 }
 
 async function refreshAccessToken(
-  generation: number
-): Promise<boolean> {
-  if (!isCurrentSession(generation)) {
-    return false;
+  generation: number,
+  revision: string,
+  failedAccessToken: string | null,
+  expectedRefreshToken: string | null
+): Promise<RefreshResolution> {
+  if (
+    !isCurrentSession(generation) ||
+    !isCurrentAuthRevision(revision)
+  ) {
+    return "session-changed";
   }
 
-  if (refreshState?.generation === generation) {
+  if (!supportsAuthSessionLock()) {
+    await terminateSession({
+      expectedRevision: revision,
+    });
+    return "failed";
+  }
+
+  if (
+    refreshState?.generation === generation &&
+    refreshState.revision === revision
+  ) {
     return refreshState.promise;
   }
 
-  const promise = performRefresh(generation);
+  const promise = withAuthSessionLock(() =>
+    performRefresh(
+      generation,
+      revision,
+      failedAccessToken,
+      expectedRefreshToken
+    )
+  );
 
   refreshState = {
     generation,
+    revision,
     promise,
   };
 
@@ -199,16 +253,42 @@ async function refreshAccessToken(
 }
 
 async function performRefresh(
-  generation: number
-): Promise<boolean> {
-  const refreshToken = tokenStorage.getRefreshToken();
+  generation: number,
+  revision: string,
+  failedAccessToken: string | null,
+  expectedRefreshToken: string | null
+): Promise<RefreshResolution> {
+  if (
+    !isCurrentSession(generation) ||
+    !isCurrentAuthRevision(revision)
+  ) {
+    return "session-changed";
+  }
 
-  if (!refreshToken) {
-    if (isCurrentSession(generation)) {
-      await terminateSession();
+  const currentAccessToken = tokenStorage.getAccessToken();
+  const currentRefreshToken = tokenStorage.getRefreshToken();
+
+  if (
+    currentAccessToken !== failedAccessToken ||
+    currentRefreshToken !== expectedRefreshToken
+  ) {
+    return currentAccessToken && currentRefreshToken
+      ? "tokens-updated"
+      : "session-changed";
+  }
+
+  if (!currentRefreshToken) {
+    if (
+      isCurrentSession(generation) &&
+      isCurrentAuthRevision(revision)
+    ) {
+      await terminateSession({
+        expectedRevision: revision,
+        lockAlreadyHeld: true,
+      });
     }
 
-    return false;
+    return "failed";
   }
 
   let response: Response;
@@ -224,7 +304,7 @@ async function performRefresh(
         },
 
         body: JSON.stringify({
-          refresh: refreshToken,
+          refresh: currentRefreshToken,
         }),
       }
     );
@@ -235,19 +315,40 @@ async function performRefresh(
     );
   }
 
+  if (
+    !isCurrentSession(generation) ||
+    !isCurrentAuthRevision(revision)
+  ) {
+    return "session-changed";
+  }
+
+  const latestAccessToken = tokenStorage.getAccessToken();
+  const latestRefreshToken = tokenStorage.getRefreshToken();
+
+  if (
+    latestAccessToken !== currentAccessToken ||
+    latestRefreshToken !== currentRefreshToken
+  ) {
+    return latestAccessToken && latestRefreshToken
+      ? "tokens-updated"
+      : "session-changed";
+  }
+
   if (!response.ok) {
     if (
       response.status === 400 ||
       response.status === 401
     ) {
-      if (isCurrentSession(generation)) {
-        await terminateSession();
-      }
+      await terminateSession({
+        expectedRevision: revision,
+        lockAlreadyHeld: true,
+      });
 
-      return false;
+      return "failed";
     }
 
-    return handleResponse<boolean>(response);
+    await handleResponse<never>(response);
+    return "failed";
   }
 
   let data: unknown;
@@ -255,21 +356,38 @@ async function performRefresh(
   try {
     data = await response.json();
   } catch {
-    if (isCurrentSession(generation)) {
-      await terminateSession();
-    }
+    await terminateSession({
+      expectedRevision: revision,
+      lockAlreadyHeld: true,
+    });
 
-    return false;
+    return "failed";
   }
 
-  if (!isCurrentSession(generation)) {
-    return false;
+  if (
+    !isCurrentSession(generation) ||
+    !isCurrentAuthRevision(revision)
+  ) {
+    return "session-changed";
   }
 
   if (!isTokenPair(data)) {
-    await terminateSession();
+    await terminateSession({
+      expectedRevision: revision,
+      lockAlreadyHeld: true,
+    });
 
-    return false;
+    return "failed";
+  }
+
+  if (
+    tokenStorage.getAccessToken() !== currentAccessToken ||
+    tokenStorage.getRefreshToken() !== currentRefreshToken
+  ) {
+    return tokenStorage.getAccessToken() &&
+      tokenStorage.getRefreshToken()
+      ? "tokens-updated"
+      : "session-changed";
   }
 
   tokenStorage.setTokens(
@@ -277,7 +395,9 @@ async function performRefresh(
     data.refresh
   );
 
-  return true;
+  return isCurrentAuthRevision(revision)
+    ? "refreshed"
+    : "session-changed";
 }
 
 async function handleResponse<T>(

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   useMutation,
@@ -16,6 +16,11 @@ import {
 
 import { authService } from "@/services/auth-service";
 import { HttpError } from "@/lib/http";
+import {
+  getAuthSessionSnapshot,
+  subscribeToAuthSession,
+} from "@/lib/session";
+import { tokenStorage } from "@/lib/token-storage";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,20 +32,46 @@ export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  useEffect(() => {
+    function reconcilePotentialSession(
+      snapshot = getAuthSessionSnapshot()
+    ) {
+      const isAuthoritativeLogout = Boolean(
+        snapshot &&
+          (snapshot.transition === "logout" ||
+            snapshot.phase === "logged-out")
+      );
+
+      if (
+        tokenStorage.getRefreshToken() &&
+        !isAuthoritativeLogout
+      ) {
+        setIsRedirecting(true);
+        router.replace("/dashboard");
+      }
+    }
+
+    const unsubscribe = subscribeToAuthSession(
+      reconcilePotentialSession
+    );
+
+    reconcilePotentialSession();
+    return unsubscribe;
+  }, [router]);
 
   const loginMutation = useMutation({
     mutationFn: async (
       credentials: Parameters<
         typeof authService.login
       >[0]
-    ) => {
+    ) => authService.login(credentials),
+
+    onSuccess: async () => {
       await queryClient.cancelQueries();
       queryClient.removeQueries();
-
-      return authService.login(credentials);
-    },
-
-    onSuccess: () => {
+      setIsRedirecting(true);
       router.replace("/dashboard");
     },
   });
@@ -71,6 +102,17 @@ export default function LoginForm() {
   }
 
   const errorMessage = getErrorMessage();
+
+  if (isRedirecting) {
+    return (
+      <div className="flex min-h-48 flex-col items-center justify-center gap-4">
+        <LoaderCircle className="h-7 w-7 animate-spin text-red-500" />
+        <p className="text-sm text-zinc-400">
+          Verificando sesiÃ³n...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div>

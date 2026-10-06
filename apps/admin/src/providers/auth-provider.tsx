@@ -20,7 +20,12 @@ import {
 } from "@/lib/business-selection-storage";
 import { HttpError } from "@/lib/http";
 import {
+  getAuthSessionSnapshot,
+  initializeAuthenticatedSession,
+  promoteAuthenticatedSession,
+  reconcileAuthenticatedSession,
   registerSessionTerminationCoordinator,
+  subscribeToAuthSession,
   terminateSession,
 } from "@/lib/session";
 import { tokenStorage } from "@/lib/token-storage";
@@ -98,27 +103,106 @@ export default function AuthProvider({
   const queryClient = useQueryClient();
   const [canValidateSession, setCanValidateSession] =
     useState<boolean | null>(null);
+  const [authRevision, setAuthRevision] =
+    useState<string | null>(null);
   const [businessSelection, setBusinessSelection] =
     useState<BusinessSelectionState | null>(null);
 
   useEffect(() => {
+    let isActive = true;
+    let synchronizationQueue = Promise.resolve();
+
     const unregister = registerSessionTerminationCoordinator({
       cancelQueries: () => queryClient.cancelQueries(),
       clearCache: () => {
         queryClient.clear();
         setCanValidateSession(false);
+        setAuthRevision(null);
         setBusinessSelection(null);
       },
       redirectToLogin: () => router.replace("/login"),
     });
 
-    if (tokenStorage.getRefreshToken()) {
+    async function synchronizeSnapshot(
+      snapshot: NonNullable<
+        ReturnType<typeof getAuthSessionSnapshot>
+      >,
+      recoverPersistedTransition: boolean
+    ) {
+      if (
+        snapshot.transition === "logout" ||
+        snapshot.phase === "logged-out"
+      ) {
+        await terminateSession({
+          remoteRevision: snapshot.revision,
+        });
+        return;
+      }
+
+      const reconciled = await reconcileAuthenticatedSession(
+        snapshot.revision
+      );
+
+      if (!isActive || !reconciled) return;
+
+      setAuthRevision(snapshot.revision);
+
+      if (
+        snapshot.phase === "transitioning" &&
+        !recoverPersistedTransition
+      ) {
+        setCanValidateSession(false);
+        return;
+      }
+
+      if (!tokenStorage.getRefreshToken()) {
+        await terminateSession({
+          expectedRevision: snapshot.revision,
+        });
+        return;
+      }
+
       setCanValidateSession(true);
+    }
+
+    function enqueueSynchronization(
+      snapshot: NonNullable<
+        ReturnType<typeof getAuthSessionSnapshot>
+      >,
+      recoverPersistedTransition = false
+    ) {
+      synchronizationQueue = synchronizationQueue
+        .then(() =>
+          synchronizeSnapshot(
+            snapshot,
+            recoverPersistedTransition
+          )
+        )
+        .catch(() => undefined);
+    }
+
+    const unsubscribe = subscribeToAuthSession(
+      enqueueSynchronization
+    );
+    const snapshot = getAuthSessionSnapshot();
+    const hasRefreshToken = Boolean(
+      tokenStorage.getRefreshToken()
+    );
+
+    if (hasRefreshToken && !snapshot) {
+      const initialized = initializeAuthenticatedSession();
+      enqueueSynchronization(initialized, true);
+    } else if (snapshot) {
+      enqueueSynchronization(snapshot, true);
     } else {
       void terminateSession();
     }
 
-    return unregister;
+    return () => {
+      isActive = false;
+      unsubscribe();
+      unregister();
+    };
   }, [queryClient, router]);
 
   const {
@@ -130,9 +214,20 @@ export default function AuthProvider({
     isSuccess,
     refetch,
   } = useQuery({
-    queryKey: authQueryKeys.me,
-    queryFn: userService.me,
-    enabled: canValidateSession === true,
+    queryKey: [...authQueryKeys.me, authRevision],
+    queryFn: async () => {
+      const revision = authRevision;
+      const authenticatedUser = await userService.me();
+
+      if (revision) {
+        await promoteAuthenticatedSession(revision);
+      }
+
+      return authenticatedUser;
+    },
+    enabled:
+      canValidateSession === true &&
+      Boolean(authRevision),
     retry: false,
   });
 
@@ -140,8 +235,12 @@ export default function AuthProvider({
     error instanceof HttpError && error.status === 401;
 
   useEffect(() => {
-    if (isAuthenticationFailure) void terminateSession();
-  }, [isAuthenticationFailure]);
+    if (isAuthenticationFailure) {
+      void terminateSession({
+        expectedRevision: authRevision ?? undefined,
+      });
+    }
+  }, [authRevision, isAuthenticationFailure]);
 
   const memberships = useMemo(
     () => user?.memberships ?? [],

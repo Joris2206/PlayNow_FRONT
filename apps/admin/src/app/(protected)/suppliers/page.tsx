@@ -15,8 +15,11 @@ import { Button } from "@/components/ui/button";
 const DEFAULT_PAGE_SIZE = 20;
 
 export default function SuppliersPage() {
-  const { activeMembership } = useAuth();
-  const businessPublicId = activeMembership?.business_public_id;
+  const {
+    activeBusinessPublicId: businessPublicId,
+    isPlatformAdmin,
+    role,
+  } = useAuth();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [searchInput, setSearchInput] = useState("");
@@ -28,7 +31,7 @@ export default function SuppliersPage() {
 
   const suppliersQuery = useSuppliers({ businessPublicId, page, pageSize, search, ordering: "-created_at" });
   const data = suppliersQuery.data;
-  const canCreate = Boolean(businessPublicId && hasAccess(activeMembership?.role, "suppliers-create"));
+  const canCreate = Boolean(businessPublicId && hasAccess(role ?? undefined, "suppliers-create", isPlatformAdmin));
 
   return <div className="mx-auto max-w-7xl space-y-6">
     <PageHeader eyebrow="Proveedores" title="Suppliers" description="Consulta y registra los proveedores de tu negocio." />

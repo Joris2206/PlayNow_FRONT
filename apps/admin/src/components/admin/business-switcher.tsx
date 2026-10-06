@@ -53,9 +53,13 @@ export default function BusinessSwitcher() {
 
   if (!activeContext) return null;
 
-  const contextualLabel = activeMembership
-    ? getRoleLabel(activeMembership.role)
-    : "Administrador de plataforma";
+  const contextualLabel = isPlatformAdmin
+    ? activeMembership
+      ? `Administrador de plataforma · ${getRoleLabel(activeMembership.role)}`
+      : "Administrador de plataforma"
+    : activeMembership
+      ? getRoleLabel(activeMembership.role)
+      : "No definido";
   const content = (
     <>
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-400">

@@ -14,9 +14,17 @@ import { hasAccess } from "@/lib/permissions";
 import { useAuth } from "@/providers/auth-provider";
 
 export default function DashboardPage() {
-  const { activeMembership, isLoading: isAuthLoading } = useAuth();
-  const businessPublicId = activeMembership?.business_public_id;
-  const canView = hasAccess(activeMembership?.role, "dashboard");
+  const {
+    activeBusinessPublicId: businessPublicId,
+    isLoading: isAuthLoading,
+    isPlatformAdmin,
+    role,
+  } = useAuth();
+  const canView = hasAccess(
+    role ?? undefined,
+    "dashboard",
+    isPlatformAdmin
+  );
   const [preset, setPreset] = useState<DateRangePreset>("month");
   const [range, setRange] = useState<FinancialDateRange>(() => getPresetDateRange("month"));
 

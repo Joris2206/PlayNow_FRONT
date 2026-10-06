@@ -37,7 +37,6 @@ const DEFAULT_HISTORY_PAGE_SIZE = 10;
 
 export default function CashPage() {
   const {
-    activeContext,
     activeBusinessPublicId: businessPublicId,
     employeePublicId,
     isLoading: isAuthLoading,
@@ -282,9 +281,6 @@ export default function CashPage() {
       <CreateCashMovementDialog
         businessPublicId={businessPublicId}
         cashRegisterPublicId={openRegister?.public_id}
-        paymentMethodsEnabled={
-          activeContext?.source === "membership"
-        }
         open={movementDialogOpen}
         onOpenChange={setMovementDialogOpen}
       />

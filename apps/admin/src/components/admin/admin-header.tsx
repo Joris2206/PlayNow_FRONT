@@ -69,11 +69,13 @@ export default function AdminHeader({
             <p className="text-sm text-zinc-500">
               {isLoading
                 ? "Cargando..."
-                : activeMembership
-                  ? getRoleLabel(activeMembership.role)
-                  : isPlatformAdmin
-                    ? "Administrador de plataforma"
-                  : "No definido"}
+                : isPlatformAdmin
+                  ? activeMembership
+                    ? `Administrador de plataforma · ${getRoleLabel(activeMembership.role)}`
+                    : "Administrador de plataforma"
+                  : activeMembership
+                    ? getRoleLabel(activeMembership.role)
+                    : "No definido"}
             </p>
           </div>
         </div>
