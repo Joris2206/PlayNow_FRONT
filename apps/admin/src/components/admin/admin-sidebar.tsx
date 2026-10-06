@@ -20,12 +20,18 @@ export default function AdminSidebar({
   onClose,
 }: AdminSidebarProps) {
   const pathname = usePathname();
-  const { isLoading, activeMembership } = useAuth();
+  const {
+    activeBusiness,
+    isLoading,
+    isPlatformAdmin,
+    role,
+  } = useAuth();
   const visibleNavigation = adminNavigation.filter(
     (item) =>
       hasAccess(
-        activeMembership?.role,
-        item.access
+        role ?? undefined,
+        item.access,
+        isPlatformAdmin
       )
   );
   const homeHref = visibleNavigation[0]?.href ?? "/dashboard";
@@ -61,7 +67,7 @@ export default function AdminSidebar({
               <p className="text-sm text-zinc-500">
                 {isLoading
                   ? "Cargando..."
-                  : activeMembership?.business_name ?? "PlayNow"}
+                  : activeBusiness?.name ?? "PlayNow"}
               </p>
 
               <p className="text-xs text-zinc-500">

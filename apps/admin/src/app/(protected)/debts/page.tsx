@@ -25,10 +25,14 @@ function listErrorMessage(error: unknown) {
 }
 
 export default function DebtsPage() {
-  const { activeMembership, isLoading: isAuthLoading } = useAuth();
-  const businessPublicId = activeMembership?.business_public_id;
-  const canReadDebts = hasAccess(activeMembership?.role, "debts");
-  const canPayDebts = hasAccess(activeMembership?.role, "debts-pay");
+  const {
+    activeBusinessPublicId: businessPublicId,
+    isLoading: isAuthLoading,
+    isPlatformAdmin,
+    role,
+  } = useAuth();
+  const canReadDebts = hasAccess(role ?? undefined, "debts", isPlatformAdmin);
+  const canPayDebts = hasAccess(role ?? undefined, "debts-pay", isPlatformAdmin);
   const [transactionType, setTransactionType] = useState<"sale" | "purchase">("sale");
   const [settlement, setSettlement] = useState<DebtSettlementFilter>("open");
   const [page, setPage] = useState(1);

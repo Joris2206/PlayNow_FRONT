@@ -19,10 +19,14 @@ const PAYMENT_LABELS = { paid: "Pagada", partial: "Parcial", pending: "Pendiente
 const PAYMENT_CLASSES = { paid: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400", partial: "border-amber-500/20 bg-amber-500/10 text-amber-400", pending: "border-white/10 bg-white/5 text-zinc-300" } as const;
 
 export default function SalesTable({ transactions }: Props) {
-  const { activeMembership } = useAuth();
+  const {
+    activeBusinessPublicId,
+    isPlatformAdmin,
+    role,
+  } = useAuth();
   const [detail, setDetail] = useState<Transaction | null>(null);
   const [cancelling, setCancelling] = useState<Transaction | null>(null);
-  const canCancel = hasAccess(activeMembership?.role, "sales-cancel");
+  const canCancel = hasAccess(role ?? undefined, "sales-cancel", isPlatformAdmin);
 
   if (transactions.length === 0) {
     return <div className="flex min-h-80 flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.02] px-6 text-center"><div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 text-zinc-500"><ReceiptText className="h-6 w-6" /></div><h3 className="font-medium text-white">No hay ventas</h3><p className="mt-2 max-w-sm text-sm leading-6 text-zinc-500">No encontramos ventas que coincidan con la búsqueda actual.</p></div>;
@@ -39,6 +43,6 @@ export default function SalesTable({ transactions }: Props) {
       </Table>
     </div>
     <SaleDetailDialog transaction={detail} open={Boolean(detail)} onOpenChange={(open) => { if (!open) setDetail(null); }} />
-    <CancelSaleDialog transaction={cancelling} businessPublicId={activeMembership?.business_public_id} open={Boolean(cancelling)} onOpenChange={(open) => { if (!open) setCancelling(null); }} />
+    <CancelSaleDialog transaction={cancelling} businessPublicId={activeBusinessPublicId} open={Boolean(cancelling)} onOpenChange={(open) => { if (!open) setCancelling(null); }} />
   </>;
 }

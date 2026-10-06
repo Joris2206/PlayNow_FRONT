@@ -15,8 +15,11 @@ import { Button } from "@/components/ui/button";
 const DEFAULT_PAGE_SIZE = 20;
 
 export default function PurchasesPage() {
-  const { activeMembership } = useAuth();
-  const businessPublicId = activeMembership?.business_public_id;
+  const {
+    activeBusinessPublicId: businessPublicId,
+    isPlatformAdmin,
+    role,
+  } = useAuth();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [searchInput, setSearchInput] = useState("");
@@ -28,8 +31,8 @@ export default function PurchasesPage() {
 
   const transactionsQuery = useTransactions({ businessPublicId, type: "purchase", page, pageSize, search, ordering: "-created_at" });
   const data = transactionsQuery.data;
-  const canCreate = Boolean(businessPublicId && hasAccess(activeMembership?.role, "purchases-create"));
-  const canCreateSupplier = Boolean(businessPublicId && hasAccess(activeMembership?.role, "suppliers-create"));
+  const canCreate = Boolean(businessPublicId && hasAccess(role ?? undefined, "purchases-create", isPlatformAdmin));
+  const canCreateSupplier = Boolean(businessPublicId && hasAccess(role ?? undefined, "suppliers-create", isPlatformAdmin));
 
   return <div className="mx-auto max-w-7xl space-y-6">
     <PageHeader eyebrow="Compras" title="Purchases" description="Registra compras pagadas, pendientes o parciales y consulta las entradas de inventario de tu negocio." />

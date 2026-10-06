@@ -33,9 +33,11 @@ type AdjustmentSelection = {
 const DEFAULT_PAGE_SIZE = 20;
 
 export default function InventoryPage() {
-  const { activeMembership } = useAuth();
-  const businessPublicId =
-    activeMembership?.business_public_id;
+  const {
+    activeBusinessPublicId: businessPublicId,
+    isPlatformAdmin,
+    role,
+  } = useAuth();
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(
@@ -155,8 +157,9 @@ export default function InventoryPage() {
             products={data.results}
             onViewMovements={setHistoryProduct}
             canAdjustStock={hasAccess(
-              activeMembership?.role,
-              "inventory-adjust"
+              role ?? undefined,
+              "inventory-adjust",
+              isPlatformAdmin
             )}
             onAdjustStock={(product) => {
               if (!businessPublicId) return;

@@ -23,13 +23,15 @@ import { Button } from "@/components/ui/button";
 const DEFAULT_PAGE_SIZE = 20;
 
 export default function CategoriesPage() {
-  const { activeMembership } = useAuth();
-
-  const businessPublicId =
-    activeMembership?.business_public_id;
+  const {
+    activeBusinessPublicId: businessPublicId,
+    isPlatformAdmin,
+    role,
+  } = useAuth();
   const canEditCatalog = hasAccess(
-    activeMembership?.role,
-    "catalog-edit"
+    role ?? undefined,
+    "catalog-edit",
+    isPlatformAdmin
   );
 
   const [page, setPage] = useState(1);

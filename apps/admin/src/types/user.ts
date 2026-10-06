@@ -12,5 +12,6 @@ export type AuthUser = {
   public_id: string;
   email: string;
   full_name: string;
+  is_superuser: boolean;
   memberships: BusinessMembership[];
 };

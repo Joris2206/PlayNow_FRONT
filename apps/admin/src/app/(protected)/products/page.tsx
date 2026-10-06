@@ -25,7 +25,11 @@ import { Button } from "@/components/ui/button";
 const DEFAULT_PAGE_SIZE = 20;
 
 export default function ProductsPage() {
-  const { activeMembership } = useAuth();
+  const {
+    activeBusinessPublicId: businessPublicId,
+    isPlatformAdmin,
+    role,
+  } = useAuth();
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(
@@ -37,11 +41,10 @@ export default function ProductsPage() {
   const [createDialogOpen, setCreateDialogOpen] =
     useState(false);
 
-  const businessPublicId =
-    activeMembership?.business_public_id;
   const canEditCatalog = hasAccess(
-    activeMembership?.role,
-    "catalog-edit"
+    role ?? undefined,
+    "catalog-edit",
+    isPlatformAdmin
   );
 
   useEffect(() => {

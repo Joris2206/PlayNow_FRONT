@@ -36,11 +36,15 @@ const DEFAULT_MOVEMENT_PAGE_SIZE = 10;
 const DEFAULT_HISTORY_PAGE_SIZE = 10;
 
 export default function CashPage() {
-  const { activeMembership, isLoading: isAuthLoading } =
-    useAuth();
-  const businessPublicId =
-    activeMembership?.business_public_id;
-  const canUseCash = hasAccess(activeMembership?.role, "cash");
+  const {
+    activeContext,
+    activeBusinessPublicId: businessPublicId,
+    employeePublicId,
+    isLoading: isAuthLoading,
+    isPlatformAdmin,
+    role,
+  } = useAuth();
+  const canUseCash = hasAccess(role ?? undefined, "cash", isPlatformAdmin);
 
   const [movementPage, setMovementPage] = useState(1);
   const [movementPageSize, setMovementPageSize] = useState(
@@ -270,9 +274,7 @@ export default function CashPage() {
 
       <OpenCashRegisterDialog
         businessPublicId={businessPublicId}
-        initialEmployeePublicId={
-          activeMembership?.employee_public_id ?? null
-        }
+        initialEmployeePublicId={employeePublicId}
         open={openDialogOpen}
         onOpenChange={setOpenDialogOpen}
       />
@@ -280,6 +282,9 @@ export default function CashPage() {
       <CreateCashMovementDialog
         businessPublicId={businessPublicId}
         cashRegisterPublicId={openRegister?.public_id}
+        paymentMethodsEnabled={
+          activeContext?.source === "membership"
+        }
         open={movementDialogOpen}
         onOpenChange={setMovementDialogOpen}
       />

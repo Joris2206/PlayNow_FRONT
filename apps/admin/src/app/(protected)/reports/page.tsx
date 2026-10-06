@@ -49,11 +49,15 @@ function QueryState({ loading, error, onRetry }: {
 }
 
 export default function ReportsPage() {
-  const { activeMembership, isLoading: isAuthLoading } = useAuth();
-  const businessPublicId = activeMembership?.business_public_id;
-  const canEnter = hasAccess(activeMembership?.role, "reports");
-  const canViewFinancial = hasAccess(activeMembership?.role, "reports-financial");
-  const canViewInventory = hasAccess(activeMembership?.role, "reports-inventory");
+  const {
+    activeBusinessPublicId: businessPublicId,
+    isLoading: isAuthLoading,
+    isPlatformAdmin,
+    role,
+  } = useAuth();
+  const canEnter = hasAccess(role ?? undefined, "reports", isPlatformAdmin);
+  const canViewFinancial = hasAccess(role ?? undefined, "reports-financial", isPlatformAdmin);
+  const canViewInventory = hasAccess(role ?? undefined, "reports-inventory", isPlatformAdmin);
   const [activeTab, setActiveTab] = useState<ReportTab>("monthly");
   const [preset, setPreset] = useState<DateRangePreset>("month");
   const [range, setRange] = useState<FinancialDateRange>(() => getPresetDateRange("month"));

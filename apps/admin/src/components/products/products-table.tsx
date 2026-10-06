@@ -66,7 +66,11 @@ function formatMoney(value: string) {
 export default function ProductsTable({
   products,
 }: ProductsTableProps) {
-  const { activeMembership } = useAuth();
+  const {
+    activeBusinessPublicId: businessPublicId,
+    isPlatformAdmin,
+    role,
+  } = useAuth();
   const [editingProduct, setEditingProduct] =
     useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] =
@@ -74,11 +78,8 @@ export default function ProductsTable({
   const [statusProduct, setStatusProduct] =
     useState<Product | null>(null);
 
-  const role = activeMembership?.role;
-  const businessPublicId =
-    activeMembership?.business_public_id;
-  const canEdit = hasAccess(role, "catalog-edit");
-  const canDelete = hasAccess(role, "catalog-delete");
+  const canEdit = hasAccess(role ?? undefined, "catalog-edit", isPlatformAdmin);
+  const canDelete = hasAccess(role ?? undefined, "catalog-delete", isPlatformAdmin);
   const statusesQuery = useEntityStatuses(canEdit);
   const updateProductStatus = useUpdateProduct();
 

@@ -42,11 +42,14 @@ function listErrorMessage(error: unknown) {
 }
 
 export default function EmployeesPage() {
-  const { activeMembership, isLoading: isAuthLoading } = useAuth();
-  const businessPublicId = activeMembership?.business_public_id;
-  const role = activeMembership?.role;
-  const canRead = hasAccess(role, "employees");
-  const canManage = hasAccess(role, "employees-write");
+  const {
+    activeBusinessPublicId: businessPublicId,
+    isLoading: isAuthLoading,
+    isPlatformAdmin,
+    role,
+  } = useAuth();
+  const canRead = hasAccess(role ?? undefined, "employees", isPlatformAdmin);
+  const canManage = hasAccess(role ?? undefined, "employees-write", isPlatformAdmin);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [searchInput, setSearchInput] = useState("");

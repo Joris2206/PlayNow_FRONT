@@ -52,7 +52,11 @@ type CategoriesTableProps = {
 export default function CategoriesTable({
   categories,
 }: CategoriesTableProps) {
-  const { activeMembership } = useAuth();
+  const {
+    activeBusinessPublicId: businessPublicId,
+    isPlatformAdmin,
+    role,
+  } = useAuth();
   const [editingCategory, setEditingCategory] =
     useState<Category | null>(null);
   const [deletingCategory, setDeletingCategory] =
@@ -60,11 +64,8 @@ export default function CategoriesTable({
   const [statusCategory, setStatusCategory] =
     useState<Category | null>(null);
 
-  const role = activeMembership?.role;
-  const businessPublicId =
-    activeMembership?.business_public_id;
-  const canEdit = hasAccess(role, "catalog-edit");
-  const canDelete = hasAccess(role, "catalog-delete");
+  const canEdit = hasAccess(role ?? undefined, "catalog-edit", isPlatformAdmin);
+  const canDelete = hasAccess(role ?? undefined, "catalog-delete", isPlatformAdmin);
   const statusesQuery = useEntityStatuses(canEdit);
   const updateCategoryStatus = useUpdateCategory();
 

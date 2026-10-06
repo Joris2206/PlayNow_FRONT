@@ -20,9 +20,13 @@ const TABS: ReadonlyArray<{ id: CommissionTab; label: string }> = [
 ];
 
 export default function CommissionsPage() {
-  const { activeMembership, isLoading } = useAuth();
-  const businessPublicId = activeMembership?.business_public_id;
-  const canAccess = hasAccess(activeMembership?.role, "commissions");
+  const {
+    activeBusinessPublicId: businessPublicId,
+    isLoading,
+    isPlatformAdmin,
+    role,
+  } = useAuth();
+  const canAccess = hasAccess(role ?? undefined, "commissions", isPlatformAdmin);
   const [activeTab, setActiveTab] =
     useState<CommissionTab>("settlements");
   const [settlementNotice, setSettlementNotice] = useState("");

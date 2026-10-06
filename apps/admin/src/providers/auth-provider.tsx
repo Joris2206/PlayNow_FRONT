@@ -10,16 +10,13 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-
-import {
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { authQueryKeys } from "@/lib/auth-query-keys";
 import {
-  businessSelectionStorage,
   getActiveBusinessStorageKey,
+  membershipBusinessPreferenceStorage,
+  platformBusinessSelectionStorage,
 } from "@/lib/business-selection-storage";
 import { HttpError } from "@/lib/http";
 import {
@@ -27,8 +24,11 @@ import {
   terminateSession,
 } from "@/lib/session";
 import { tokenStorage } from "@/lib/token-storage";
+import { businessKeys } from "@/hooks/use-businesses";
+import { businessService } from "@/services/business-service";
 import { userService } from "@/services/user-service";
 
+import type { Business } from "@/types/business";
 import type {
   AuthUser,
   BusinessMembership,
@@ -38,23 +38,35 @@ type BusinessStatus =
   | "resolving"
   | "resolved"
   | "selection-required"
+  | "verification-error"
   | "empty";
+
+export type ActiveBusinessContext =
+  | ({ source: "membership" } & BusinessMembership)
+  | {
+      source: "platform";
+      business_public_id: string;
+      business_name: string;
+      membership_public_id: null;
+      role: null;
+      employee_public_id: null;
+    };
 
 type AuthContextValue = {
   user: AuthUser | null;
   memberships: BusinessMembership[];
+  activeContext: ActiveBusinessContext | null;
   activeMembership: BusinessMembership | null;
-  activeBusiness: {
-    public_id: string;
-    name: string;
-  } | null;
-  activeBusinessPublicId: string | null;
+  activeBusiness: { public_id: string; name: string } | null;
+  activeBusinessPublicId: string | undefined;
   role: BusinessMembership["role"] | null;
   employeePublicId: string | null;
+  isPlatformAdmin: boolean;
   businessStatus: BusinessStatus;
-  selectMembership: (
-    membershipPublicId: string
-  ) => boolean;
+  businessVerificationError: Error | null;
+  selectMembership: (membershipPublicId: string) => boolean;
+  selectBusiness: (business: Business) => boolean;
+  retryBusinessVerification: () => void;
   status: "checking" | "authenticated" | "error";
   error: Error | null;
   retry: () => void;
@@ -73,16 +85,15 @@ type BusinessSelectionState =
       status: "selection-required" | "empty";
     };
 
-const AuthContext =
-  createContext<AuthContextValue | undefined>(undefined);
-
-type AuthProviderProps = {
-  children: ReactNode;
-};
+const AuthContext = createContext<AuthContextValue | undefined>(
+  undefined
+);
 
 export default function AuthProvider({
   children,
-}: AuthProviderProps) {
+}: {
+  children: ReactNode;
+}) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [canValidateSession, setCanValidateSession] =
@@ -91,22 +102,15 @@ export default function AuthProvider({
     useState<BusinessSelectionState | null>(null);
 
   useEffect(() => {
-    const coordinator = {
+    const unregister = registerSessionTerminationCoordinator({
       cancelQueries: () => queryClient.cancelQueries(),
-
       clearCache: () => {
         queryClient.clear();
         setCanValidateSession(false);
         setBusinessSelection(null);
       },
-
-      redirectToLogin: () => {
-        router.replace("/login");
-      },
-    };
-
-    const unregister =
-      registerSessionTerminationCoordinator(coordinator);
+      redirectToLogin: () => router.replace("/login"),
+    });
 
     if (tokenStorage.getRefreshToken()) {
       setCanValidateSession(true);
@@ -136,9 +140,7 @@ export default function AuthProvider({
     error instanceof HttpError && error.status === 401;
 
   useEffect(() => {
-    if (isAuthenticationFailure) {
-      void terminateSession();
-    }
+    if (isAuthenticationFailure) void terminateSession();
   }, [isAuthenticationFailure]);
 
   const memberships = useMemo(
@@ -146,6 +148,7 @@ export default function AuthProvider({
     [user?.memberships]
   );
   const userPublicId = user?.public_id;
+  const isPlatformAdmin = user?.is_superuser === true;
   const membershipSignature = memberships
     .map(
       (membership) =>
@@ -159,156 +162,215 @@ export default function AuthProvider({
       return;
     }
 
+    if (isPlatformAdmin) {
+      const platformBusinessPublicId =
+        platformBusinessSelectionStorage.get(userPublicId);
+
+      setBusinessSelection(
+        platformBusinessPublicId
+          ? {
+              userPublicId,
+              status: "resolved",
+              businessPublicId: platformBusinessPublicId,
+            }
+          : {
+              userPublicId,
+              status: "selection-required",
+            }
+      );
+      return;
+    }
+
+    platformBusinessSelectionStorage.remove(userPublicId);
+
     const preferredBusinessPublicId =
-      businessSelectionStorage.get(userPublicId);
+      membershipBusinessPreferenceStorage.get(userPublicId);
     const preferredMembership = memberships.find(
       (membership) =>
-        membership.business_public_id ===
-        preferredBusinessPublicId
+        membership.business_public_id === preferredBusinessPublicId
     );
 
     if (preferredMembership) {
       setBusinessSelection({
         userPublicId,
         status: "resolved",
-        businessPublicId:
-          preferredMembership.business_public_id,
+        businessPublicId: preferredMembership.business_public_id,
       });
       return;
     }
 
     if (preferredBusinessPublicId) {
-      businessSelectionStorage.remove(userPublicId);
-    }
-
-    if (memberships.length === 0) {
-      setBusinessSelection({
-        userPublicId,
-        status: "empty",
-      });
-      return;
+      membershipBusinessPreferenceStorage.remove(userPublicId);
     }
 
     if (memberships.length === 1) {
       const [onlyMembership] = memberships;
-
-      businessSelectionStorage.set(
+      membershipBusinessPreferenceStorage.set(
         userPublicId,
         onlyMembership.business_public_id
       );
       setBusinessSelection({
         userPublicId,
         status: "resolved",
-        businessPublicId:
-          onlyMembership.business_public_id,
+        businessPublicId: onlyMembership.business_public_id,
       });
       return;
     }
 
-    setBusinessSelection({
-      userPublicId,
-      status: "selection-required",
-    });
+    if (memberships.length > 1) {
+      setBusinessSelection({
+        userPublicId,
+        status: "selection-required",
+      });
+      return;
+    }
+
+    setBusinessSelection({ userPublicId, status: "empty" });
   }, [
     dataUpdatedAt,
+    isPlatformAdmin,
     membershipSignature,
     memberships,
     userPublicId,
   ]);
 
   useEffect(() => {
-    if (!userPublicId) return;
+    if (!userPublicId || isPlatformAdmin) return;
 
-    const storageKey =
-      getActiveBusinessStorageKey(userPublicId);
+    const storageKey = getActiveBusinessStorageKey(userPublicId);
 
     function handleStorage(event: StorageEvent) {
       if (event.key !== storageKey) return;
 
-      const nextMembership = memberships.find(
-        (membership) =>
-          membership.business_public_id ===
-          event.newValue
-      );
-
-      if (nextMembership) {
-        setBusinessSelection({
-          userPublicId: userPublicId!,
-          status: "resolved",
-          businessPublicId:
-            nextMembership.business_public_id,
-        });
-        return;
-      }
-
       if (event.newValue) {
-        businessSelectionStorage.remove(userPublicId!);
+        const isMembershipBusiness = memberships.some(
+          (membership) =>
+            membership.business_public_id === event.newValue
+        );
+
+        if (isMembershipBusiness) {
+          setBusinessSelection({
+            userPublicId: userPublicId!,
+            status: "resolved",
+            businessPublicId: event.newValue,
+          });
+          return;
+        }
+
+        membershipBusinessPreferenceStorage.remove(userPublicId!);
       }
 
-      if (memberships.length === 0) {
-        setBusinessSelection({
-          userPublicId: userPublicId!,
-          status: "empty",
-        });
-      } else if (memberships.length === 1) {
+      if (memberships.length === 1) {
         const [onlyMembership] = memberships;
-
-        businessSelectionStorage.set(
+        membershipBusinessPreferenceStorage.set(
           userPublicId!,
           onlyMembership.business_public_id
         );
         setBusinessSelection({
           userPublicId: userPublicId!,
           status: "resolved",
-          businessPublicId:
-            onlyMembership.business_public_id,
+          businessPublicId: onlyMembership.business_public_id,
+        });
+      } else if (memberships.length > 1) {
+        setBusinessSelection({
+          userPublicId: userPublicId!,
+          status: "selection-required",
         });
       } else {
         setBusinessSelection({
           userPublicId: userPublicId!,
-          status: "selection-required",
+          status: "empty",
         });
       }
     }
 
     window.addEventListener("storage", handleStorage);
-    return () =>
-      window.removeEventListener("storage", handleStorage);
-  }, [membershipSignature, memberships, userPublicId]);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [isPlatformAdmin, membershipSignature, memberships, userPublicId]);
 
-  const activeMembership =
+  const selectedBusinessPublicId =
     userPublicId &&
     businessSelection?.userPublicId === userPublicId &&
     businessSelection.status === "resolved"
-      ? memberships.find(
-          (membership) =>
-            membership.business_public_id ===
-            businessSelection.businessPublicId
-        ) ?? null
-      : null;
+      ? businessSelection.businessPublicId
+      : undefined;
+  const activeMembership =
+    memberships.find(
+      (membership) =>
+        membership.business_public_id === selectedBusinessPublicId
+    ) ?? null;
+  const needsPlatformBusiness = Boolean(
+    isPlatformAdmin && selectedBusinessPublicId && !activeMembership
+  );
+  const {
+    data: platformBusiness,
+    error: platformBusinessError,
+    isError: isPlatformBusinessError,
+    isPending: isPlatformBusinessPending,
+    refetch: refetchPlatformBusiness,
+  } = useQuery({
+    queryKey: businessKeys.detail(selectedBusinessPublicId),
+    queryFn: () => businessService.get(selectedBusinessPublicId!),
+    enabled: needsPlatformBusiness,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (
+      !needsPlatformBusiness ||
+      !userPublicId ||
+      !(platformBusinessError instanceof HttpError) ||
+      ![403, 404].includes(platformBusinessError.status)
+    ) {
+      return;
+    }
+
+    platformBusinessSelectionStorage.remove(userPublicId);
+    setBusinessSelection({
+      userPublicId,
+      status: "selection-required",
+    });
+  }, [needsPlatformBusiness, platformBusinessError, userPublicId]);
+
+  const activeContext = useMemo<ActiveBusinessContext | null>(() => {
+    if (activeMembership) {
+      return { source: "membership", ...activeMembership };
+    }
+
+    if (needsPlatformBusiness && platformBusiness) {
+      return {
+        source: "platform",
+        business_public_id: platformBusiness.public_id,
+        business_name: platformBusiness.business_name,
+        membership_public_id: null,
+        role: null,
+        employee_public_id: null,
+      };
+    }
+
+    return null;
+  }, [activeMembership, needsPlatformBusiness, platformBusiness]);
 
   const businessStatus: BusinessStatus =
     !userPublicId ||
-    businessSelection?.userPublicId !== userPublicId
+    businessSelection?.userPublicId !== userPublicId ||
+    (needsPlatformBusiness && isPlatformBusinessPending)
       ? "resolving"
-      : businessSelection.status === "resolved" &&
-          !activeMembership
-        ? "resolving"
+      : needsPlatformBusiness && isPlatformBusinessError
+        ? "verification-error"
         : businessSelection.status;
 
   const selectMembership = useCallback(
     (membershipPublicId: string) => {
-      if (!userPublicId) return false;
+      if (!userPublicId || isPlatformAdmin) return false;
 
       const membership = memberships.find(
         (candidate) =>
-          candidate.membership_public_id ===
-          membershipPublicId
+          candidate.membership_public_id === membershipPublicId
       );
-
       if (!membership) return false;
 
-      businessSelectionStorage.set(
+      membershipBusinessPreferenceStorage.set(
         userPublicId,
         membership.business_public_id
       );
@@ -317,16 +379,35 @@ export default function AuthProvider({
         status: "resolved",
         businessPublicId: membership.business_public_id,
       });
-
       return true;
     },
-    [memberships, userPublicId]
+    [isPlatformAdmin, memberships, userPublicId]
+  );
+
+  const selectBusiness = useCallback(
+    (business: Business) => {
+      if (!userPublicId || !isPlatformAdmin) return false;
+
+      queryClient.setQueryData(
+        businessKeys.detail(business.public_id),
+        business
+      );
+      platformBusinessSelectionStorage.set(
+        userPublicId,
+        business.public_id
+      );
+      setBusinessSelection({
+        userPublicId,
+        status: "resolved",
+        businessPublicId: business.public_id,
+      });
+      return true;
+    },
+    [isPlatformAdmin, queryClient, userPublicId]
   );
 
   const status: AuthContextValue["status"] =
-    canValidateSession !== true ||
-    isPending ||
-    isAuthenticationFailure
+    canValidateSession !== true || isPending || isAuthenticationFailure
       ? "checking"
       : isSuccess
         ? "authenticated"
@@ -336,21 +417,25 @@ export default function AuthProvider({
     () => ({
       user: user ?? null,
       memberships,
+      activeContext,
       activeMembership,
-      activeBusiness: activeMembership
+      activeBusiness: activeContext
         ? {
-            public_id:
-              activeMembership.business_public_id,
-            name: activeMembership.business_name,
+            public_id: activeContext.business_public_id,
+            name: activeContext.business_name,
           }
         : null,
-      activeBusinessPublicId:
-        activeMembership?.business_public_id ?? null,
+      activeBusinessPublicId: activeContext?.business_public_id,
       role: activeMembership?.role ?? null,
-      employeePublicId:
-        activeMembership?.employee_public_id ?? null,
+      employeePublicId: activeMembership?.employee_public_id ?? null,
+      isPlatformAdmin,
       businessStatus,
+      businessVerificationError: platformBusinessError ?? null,
       selectMembership,
+      selectBusiness,
+      retryBusinessVerification: () => {
+        void refetchPlatformBusiness();
+      },
       status,
       error: isError ? error : null,
       retry: () => {
@@ -360,12 +445,17 @@ export default function AuthProvider({
       isAuthenticated: status === "authenticated",
     }),
     [
+      activeContext,
       activeMembership,
       businessStatus,
       error,
       isError,
+      isPlatformAdmin,
       memberships,
+      platformBusinessError,
+      refetchPlatformBusiness,
       refetch,
+      selectBusiness,
       selectMembership,
       status,
       user,

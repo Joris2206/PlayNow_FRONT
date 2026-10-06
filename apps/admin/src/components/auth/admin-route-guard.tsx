@@ -26,7 +26,7 @@ export default function AdminRouteGuard({
 }: AdminRouteGuardProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { activeMembership } = useAuth();
+  const { isPlatformAdmin, role } = useAuth();
   const navigationItem = adminNavigation.find(
     (item) =>
       pathname === item.href ||
@@ -35,12 +35,14 @@ export default function AdminRouteGuard({
   const hasCurrentRouteAccess = Boolean(
     navigationItem &&
       hasAccess(
-        activeMembership?.role,
-        navigationItem.access
+        role ?? undefined,
+        navigationItem.access,
+        isPlatformAdmin
       )
   );
   const fallbackRoute = getFirstAccessibleAdminRoute(
-    activeMembership?.role
+    role ?? undefined,
+    isPlatformAdmin
   );
 
   useEffect(() => {

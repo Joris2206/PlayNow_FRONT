@@ -1,13 +1,20 @@
 "use client";
 
-import {
-  Building2,
-  ChevronsUpDown,
-} from "lucide-react";
+import { useState } from "react";
+import { Building2, ChevronsUpDown } from "lucide-react";
 
 import { useAuth } from "@/providers/auth-provider";
 
+import PlatformBusinessSelector from "@/components/admin/platform-business-selector";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,13 +42,20 @@ export function getRoleLabel(role: UserRole) {
 
 export default function BusinessSwitcher() {
   const {
-    memberships,
+    activeContext,
     activeMembership,
+    isPlatformAdmin,
+    memberships,
     selectMembership,
   } = useAuth();
+  const [platformSelectorOpen, setPlatformSelectorOpen] =
+    useState(false);
 
-  if (!activeMembership) return null;
+  if (!activeContext) return null;
 
+  const contextualLabel = activeMembership
+    ? getRoleLabel(activeMembership.role)
+    : "Administrador de plataforma";
   const content = (
     <>
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/10 text-red-400">
@@ -50,22 +64,54 @@ export default function BusinessSwitcher() {
       <span className="min-w-0 flex-1 text-left">
         <span
           className="block truncate text-sm font-medium text-white"
-          title={activeMembership.business_name}
+          title={activeContext.business_name}
         >
-          {activeMembership.business_name}
+          {activeContext.business_name}
         </span>
         <span className="block truncate text-xs font-normal text-zinc-500">
-          {getRoleLabel(activeMembership.role)}
+          {contextualLabel}
         </span>
       </span>
     </>
   );
 
-  if (memberships.length <= 1) {
+  if (isPlatformAdmin) {
+    return (
+      <Dialog
+        open={platformSelectorOpen}
+        onOpenChange={setPlatformSelectorOpen}
+      >
+        <DialogTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-auto min-w-0 max-w-56 justify-start gap-3 border border-white/10 bg-white/[0.03] px-3 py-2 hover:bg-white/[0.07] sm:max-w-72"
+            aria-label={`Cambiar negocio global. Actual: ${activeContext.business_name}`}
+          >
+            {content}
+            <ChevronsUpDown className="h-4 w-4 shrink-0 text-zinc-500" />
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-h-[90vh] overflow-y-auto border-white/10 bg-zinc-950 text-white sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Seleccionar negocio</DialogTitle>
+            <DialogDescription className="text-zinc-500">
+              Administrador de plataforma · busca y selecciona un negocio sin asumir una membership.
+            </DialogDescription>
+          </DialogHeader>
+          <PlatformBusinessSelector
+            onSelected={() => setPlatformSelectorOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (memberships.length <= 1 || !activeMembership) {
     return (
       <div
         className="flex min-w-0 max-w-56 items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 sm:max-w-72"
-        aria-label={`Negocio activo: ${activeMembership.business_name}`}
+        aria-label={`Negocio activo: ${activeContext.business_name}`}
       >
         {content}
       </div>
@@ -79,7 +125,7 @@ export default function BusinessSwitcher() {
           type="button"
           variant="ghost"
           className="h-auto min-w-0 max-w-56 justify-start gap-3 border border-white/10 bg-white/[0.03] px-3 py-2 hover:bg-white/[0.07] sm:max-w-72"
-          aria-label={`Cambiar negocio. Actual: ${activeMembership.business_name}`}
+          aria-label={`Cambiar negocio. Actual: ${activeContext.business_name}`}
         >
           {content}
           <ChevronsUpDown className="h-4 w-4 shrink-0 text-zinc-500" />

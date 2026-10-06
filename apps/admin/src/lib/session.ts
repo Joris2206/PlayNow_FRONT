@@ -1,4 +1,5 @@
 import { tokenStorage } from "@/lib/token-storage";
+import { platformBusinessSelectionStorage } from "@/lib/business-selection-storage";
 
 export type TokenPair = {
   access: string;
@@ -30,6 +31,7 @@ export function isCurrentSession(
 export function prepareForLogin() {
   sessionGeneration += 1;
   terminationPromise = null;
+  platformBusinessSelectionStorage.clearAll();
   tokenStorage.clearTokens();
 }
 
@@ -72,6 +74,7 @@ export async function terminateSession() {
     }
 
     tokenStorage.clearTokens();
+    platformBusinessSelectionStorage.clearAll();
 
     coordinators.forEach((coordinator) => {
       coordinator.clearCache();

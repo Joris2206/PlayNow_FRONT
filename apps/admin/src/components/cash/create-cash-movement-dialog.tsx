@@ -42,6 +42,7 @@ const SELECT_PAGE_SIZE = 20;
 type CreateCashMovementDialogProps = {
   businessPublicId?: string;
   cashRegisterPublicId?: string;
+  paymentMethodsEnabled?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
@@ -49,6 +50,7 @@ type CreateCashMovementDialogProps = {
 export default function CreateCashMovementDialog({
   businessPublicId,
   cashRegisterPublicId,
+  paymentMethodsEnabled = true,
   open,
   onOpenChange,
 }: CreateCashMovementDialogProps) {
@@ -84,7 +86,10 @@ export default function CreateCashMovementDialog({
     "Activo"
   );
   const paymentMethodsQuery = usePaymentMethods({
-    businessPublicId: open ? businessPublicId : undefined,
+    businessPublicId:
+      open && paymentMethodsEnabled
+        ? businessPublicId
+        : undefined,
     page: paymentMethodPage,
     pageSize: SELECT_PAGE_SIZE,
     ordering: "name",
@@ -110,6 +115,7 @@ export default function CreateCashMovementDialog({
     businessPublicId,
     cashRegisterPublicId,
     open,
+    paymentMethodsEnabled,
     resetCreateMovement,
   ]);
 
@@ -347,6 +353,7 @@ export default function CreateCashMovementDialog({
             </section>
           )}
 
+          {paymentMethodsEnabled ? (
           <div className="space-y-2">
             <label htmlFor="cash-movement-payment-method" className="text-sm font-medium text-zinc-300">
               Método de pago <span className="font-normal text-zinc-600">(opcional)</span>
@@ -402,6 +409,11 @@ export default function CreateCashMovementDialog({
               </div>
             )}
           </div>
+          ) : (
+            <p className="rounded-lg border border-white/10 bg-white/[0.02] px-4 py-3 text-xs leading-5 text-zinc-500">
+              El método de pago opcional no está disponible en contexto de plataforma. El movimiento se registrará sin asociarlo.
+            </p>
+          )}
 
           <div className="space-y-2">
             <label htmlFor="cash-movement-note" className="text-sm font-medium text-zinc-300">

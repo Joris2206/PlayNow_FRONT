@@ -1,171 +1,174 @@
 import { ROLES, type UserRole } from "@/types/roles";
 
-const ADMIN_ACCESS_ROLES = {
-  catalog: [
+const ADMIN_ACCESS = {
+  catalog: { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.INVENTORY,
     ROLES.SELLER,
     ROLES.VIEWER,
-  ],
-  "catalog-edit": [
+  ], platformAdmin: true },
+  "catalog-edit": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.INVENTORY,
-  ],
-  "catalog-delete": [
+  ], platformAdmin: true },
+  "catalog-delete": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
-  ],
-  inventory: [
+  ], platformAdmin: true },
+  inventory: { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.INVENTORY,
     ROLES.VIEWER,
-  ],
-  "inventory-adjust": [
+  ], platformAdmin: true },
+  "inventory-adjust": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.INVENTORY,
-  ],
-  sales: [
+  ], platformAdmin: true },
+  sales: { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.CASHIER,
     ROLES.SELLER,
     ROLES.VIEWER,
-  ],
-  "sales-create": [
+  ], platformAdmin: true },
+  "sales-create": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.CASHIER,
     ROLES.SELLER,
-  ],
-  "sales-cancel": [
+  ], platformAdmin: false },
+  "sales-cancel": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
-  ],
-  purchases: [
-    ROLES.OWNER,
-    ROLES.ADMIN,
-    ROLES.CASHIER,
-    ROLES.SELLER,
-    ROLES.INVENTORY,
-    ROLES.VIEWER,
-  ],
-  "purchases-create": [
-    ROLES.OWNER,
-    ROLES.ADMIN,
-    ROLES.INVENTORY,
-  ],
-  "purchases-cancel": [
-    ROLES.OWNER,
-    ROLES.ADMIN,
-  ],
-  expenses: [
+  ], platformAdmin: true },
+  purchases: { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.CASHIER,
     ROLES.SELLER,
     ROLES.INVENTORY,
     ROLES.VIEWER,
-  ],
-  "expenses-create": [
+  ], platformAdmin: true },
+  "purchases-create": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
-  ],
-  "expenses-cancel": [
+    ROLES.INVENTORY,
+  ], platformAdmin: false },
+  "purchases-cancel": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
-  ],
-  "payment-methods": [
+  ], platformAdmin: true },
+  expenses: { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.CASHIER,
     ROLES.SELLER,
     ROLES.INVENTORY,
     ROLES.VIEWER,
-  ],
-  "payment-methods-write": [
+  ], platformAdmin: false },
+  "expenses-create": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
-  ],
-  employees: [
+  ], platformAdmin: false },
+  "expenses-cancel": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
-  ],
-  "employees-write": [
+  ], platformAdmin: false },
+  "payment-methods": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
-  ],
-  customers: [
+    ROLES.CASHIER,
+    ROLES.SELLER,
+    ROLES.INVENTORY,
+    ROLES.VIEWER,
+  ], platformAdmin: false },
+  "payment-methods-write": { roles: [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+  ], platformAdmin: false },
+  employees: { roles: [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+  ], platformAdmin: true },
+  "employees-write": { roles: [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+  ], platformAdmin: true },
+  customers: { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.CASHIER,
     ROLES.SELLER,
     ROLES.VIEWER,
-  ],
-  "customers-create": [
+  ], platformAdmin: false },
+  "customers-create": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.CASHIER,
     ROLES.SELLER,
-  ],
-  suppliers: [
+  ], platformAdmin: false },
+  suppliers: { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.INVENTORY,
     ROLES.VIEWER,
-  ],
-  "suppliers-create": [
+  ], platformAdmin: false },
+  "suppliers-create": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.INVENTORY,
-  ],
-  debts: [
+  ], platformAdmin: false },
+  debts: { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.CASHIER,
     ROLES.SELLER,
     ROLES.VIEWER,
-  ],
-  "debts-pay": [
+  ], platformAdmin: true },
+  "debts-pay": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.CASHIER,
-  ],
-  cash: [
+  ], platformAdmin: true },
+  cash: { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.CASHIER,
-  ],
-  dashboard: [
+  ], platformAdmin: true },
+  dashboard: { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.VIEWER,
-  ],
-  reports: [
+  ], platformAdmin: false },
+  reports: { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.INVENTORY,
-  ],
-  "reports-financial": [
+  ], platformAdmin: true },
+  "reports-financial": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
-  ],
-  "reports-inventory": [
+  ], platformAdmin: true },
+  "reports-inventory": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
     ROLES.INVENTORY,
-  ],
-  commissions: [
+  ], platformAdmin: true },
+  commissions: { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
-  ],
-} as const satisfies Record<string, readonly UserRole[]>;
+  ], platformAdmin: true },
+} as const satisfies Record<
+  string,
+  { roles: readonly UserRole[]; platformAdmin: boolean }
+>;
 
 export type AdminAccessPolicy =
-  keyof typeof ADMIN_ACCESS_ROLES;
+  keyof typeof ADMIN_ACCESS;
 
 export function hasRole(
   currentRole: UserRole | undefined,
@@ -184,14 +187,17 @@ export function hasRole(
 
 export function hasAccess(
   currentRole: UserRole | undefined,
-  policy?: AdminAccessPolicy
+  policy?: AdminAccessPolicy,
+  isPlatformAdmin = false
 ) {
   if (!policy) {
     return true;
   }
 
-  return hasRole(
-    currentRole,
-    ADMIN_ACCESS_ROLES[policy]
+  const access = ADMIN_ACCESS[policy];
+
+  return (
+    hasRole(currentRole, access.roles) ||
+    (isPlatformAdmin && access.platformAdmin)
   );
 }

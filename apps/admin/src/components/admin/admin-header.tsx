@@ -20,7 +20,12 @@ type AdminHeaderProps = {
 export default function AdminHeader({
   onOpenSidebar,
 }: AdminHeaderProps) {
-  const { user, isLoading, activeMembership } = useAuth();
+  const {
+    user,
+    isLoading,
+    activeMembership,
+    isPlatformAdmin,
+  } = useAuth();
 
   function handleLogout() {
     void authService.logout();
@@ -66,6 +71,8 @@ export default function AdminHeader({
                 ? "Cargando..."
                 : activeMembership
                   ? getRoleLabel(activeMembership.role)
+                  : isPlatformAdmin
+                    ? "Administrador de plataforma"
                   : "No definido"}
             </p>
           </div>

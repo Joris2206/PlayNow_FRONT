@@ -15,8 +15,12 @@ import { Button } from "@/components/ui/button";
 const DEFAULT_PAGE_SIZE = 20;
 
 export default function SalesPage() {
-  const { activeMembership } = useAuth();
-  const businessPublicId = activeMembership?.business_public_id;
+  const {
+    activeBusinessPublicId: businessPublicId,
+    employeePublicId,
+    isPlatformAdmin,
+    role,
+  } = useAuth();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [searchInput, setSearchInput] = useState("");
@@ -44,7 +48,7 @@ export default function SalesPage() {
     ordering: "-created_at",
   });
   const data = transactionsQuery.data;
-  const canCreate = Boolean(businessPublicId && hasAccess(activeMembership?.role, "sales-create"));
+  const canCreate = Boolean(businessPublicId && hasAccess(role ?? undefined, "sales-create", isPlatformAdmin));
 
   return <div className="mx-auto max-w-7xl space-y-6">
     <PageHeader eyebrow="Ventas" title="Sales" description="Registra ventas pagadas, pendientes o parciales y consulta las operaciones de tu negocio." />
@@ -54,6 +58,6 @@ export default function SalesPage() {
     {transactionsQuery.isError && <div className="flex min-h-56 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/5 px-6"><div className="text-center"><AlertCircle className="mx-auto h-7 w-7 text-red-400" /><h3 className="mt-4 font-medium text-white">No pudimos cargar las ventas</h3><p className="mt-2 text-sm text-zinc-500">Verifica tu conexión e intenta nuevamente.</p><Button type="button" variant="outline" onClick={() => transactionsQuery.refetch()} className="mt-5 border-white/10 bg-transparent text-white hover:bg-white/5">Reintentar</Button></div></div>}
     {transactionsQuery.isSuccess && data && <><SalesTable transactions={data.results} /><ListPagination count={data.count} singularLabel="venta" pluralLabel="ventas" currentPage={data.current_page} totalPages={data.total_pages} hasPrevious={Boolean(data.previous)} hasNext={Boolean(data.next)} onPageChange={setPage} /></>}
 
-    <CreateSaleDialog businessPublicId={businessPublicId} initialEmployeePublicId={activeMembership?.employee_public_id ?? null} open={createOpen} onOpenChange={setCreateOpen} onCreated={() => setPage(1)} />
+    <CreateSaleDialog businessPublicId={businessPublicId} initialEmployeePublicId={employeePublicId} open={createOpen} onOpenChange={setCreateOpen} onCreated={() => setPage(1)} />
   </div>;
 }

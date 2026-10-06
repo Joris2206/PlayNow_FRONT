@@ -14,7 +14,7 @@ export default function RequirePermission({
   children,
   permission,
 }: RequirePermissionProps) {
-  const { activeMembership, isLoading } = useAuth();
+  const { isLoading, isPlatformAdmin, role } = useAuth();
 
   if (isLoading) {
     return (
@@ -27,7 +27,10 @@ export default function RequirePermission({
     );
   }
 
-  if (!permission || !hasAccess(activeMembership?.role, permission)) {
+  if (
+    !permission ||
+    !hasAccess(role ?? undefined, permission, isPlatformAdmin)
+  ) {
     return (
       <div className="mx-auto flex min-h-80 max-w-3xl items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/5 px-6 text-center">
         <div>

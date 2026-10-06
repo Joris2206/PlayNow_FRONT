@@ -122,9 +122,10 @@ export const adminNavigation: readonly AdminNavigationItem[] = [
 ];
 
 export function getFirstAccessibleAdminRoute(
-  role: UserRole | undefined
+  role: UserRole | undefined,
+  isPlatformAdmin = false
 ) {
   return adminNavigation.find((item) =>
-    hasAccess(role, item.access)
+    hasAccess(role, item.access, isPlatformAdmin)
   )?.href;
 }
