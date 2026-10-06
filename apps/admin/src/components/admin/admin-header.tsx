@@ -7,6 +7,9 @@ import {
 } from "lucide-react";
 
 import { authService } from "@/services/auth-service";
+import BusinessSwitcher, {
+  getRoleLabel,
+} from "@/components/admin/business-switcher";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/providers/auth-provider";
 
@@ -36,17 +39,13 @@ export default function AdminHeader({
           <Menu className="h-5 w-5" />
         </Button>
 
-        <div>
+        {isLoading ? (
           <p className="text-sm text-zinc-500">
-            {isLoading
-              ? "Cargando..."
-              : activeMembership?.business_name ?? "PlayNow"}
+            Cargando...
           </p>
-
-          <h1 className="text-lg font-semibold text-white">
-            Panel administrativo
-          </h1>
-        </div>
+        ) : (
+          <BusinessSwitcher />
+        )}
       </div>
 
       <div className="flex items-center gap-3">
@@ -65,7 +64,9 @@ export default function AdminHeader({
             <p className="text-sm text-zinc-500">
               {isLoading
                 ? "Cargando..."
-                : activeMembership?.role ?? "No definido"}
+                : activeMembership
+                  ? getRoleLabel(activeMembership.role)
+                  : "No definido"}
             </p>
           </div>
         </div>

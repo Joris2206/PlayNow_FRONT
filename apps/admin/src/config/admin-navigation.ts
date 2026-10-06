@@ -15,7 +15,11 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import type { AdminAccessPolicy } from "@/lib/permissions";
+import {
+  hasAccess,
+  type AdminAccessPolicy,
+} from "@/lib/permissions";
+import type { UserRole } from "@/types/roles";
 
 export type AdminNavigationItem = {
   label: string;
@@ -116,3 +120,11 @@ export const adminNavigation: readonly AdminNavigationItem[] = [
     access: "reports",
   },
 ];
+
+export function getFirstAccessibleAdminRoute(
+  role: UserRole | undefined
+) {
+  return adminNavigation.find((item) =>
+    hasAccess(role, item.access)
+  )?.href;
+}
