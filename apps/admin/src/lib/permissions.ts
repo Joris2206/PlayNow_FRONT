@@ -1,6 +1,11 @@
 import { ROLES, type UserRole } from "@/types/roles";
 
 const ADMIN_ACCESS = {
+  businesses: {
+    roles: [],
+    platformAdmin: false,
+    businessAdministration: true,
+  },
   catalog: { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
@@ -164,7 +169,11 @@ const ADMIN_ACCESS = {
   ], platformAdmin: true },
 } as const satisfies Record<
   string,
-  { roles: readonly UserRole[]; platformAdmin: boolean }
+  {
+    roles: readonly UserRole[];
+    platformAdmin: boolean;
+    businessAdministration?: boolean;
+  }
 >;
 
 export type AdminAccessPolicy =
@@ -188,13 +197,21 @@ export function hasRole(
 export function hasAccess(
   currentRole: UserRole | undefined,
   policy?: AdminAccessPolicy,
-  isPlatformAdmin = false
+  isPlatformAdmin = false,
+  canAccessBusinessAdministration = false
 ) {
   if (!policy) {
     return true;
   }
 
   const access = ADMIN_ACCESS[policy];
+
+  if (
+    "businessAdministration" in access &&
+    access.businessAdministration
+  ) {
+    return canAccessBusinessAdministration;
+  }
 
   return (
     hasRole(currentRole, access.roles) ||

@@ -1,6 +1,8 @@
 "use client";
 
 import { Fragment } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { AlertCircle, Building2, LoaderCircle, LogOut } from "lucide-react";
 
 import { useAuth } from "@/providers/auth-provider";
@@ -15,6 +17,7 @@ export default function BusinessAccessBoundary({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
   const {
     memberships,
     activeBusinessPublicId,
@@ -22,7 +25,15 @@ export default function BusinessAccessBoundary({
     isPlatformAdmin,
     retryBusinessVerification,
     selectMembership,
+    user,
   } = useAuth();
+
+  if (
+    pathname === "/businesses" ||
+    pathname.startsWith("/businesses/")
+  ) {
+    return children;
+  }
 
   if (businessStatus === "resolving") {
     return (
@@ -72,11 +83,19 @@ export default function BusinessAccessBoundary({
           <p className="mt-2 text-sm leading-6 text-zinc-500">
             Tu cuenta no tiene memberships habilitadas para acceder al panel administrativo.
           </p>
+          {user?.can_access_business_administration === true && (
+            <Button
+              asChild
+              className="mt-6 bg-red-500 text-white hover:bg-red-600"
+            >
+              <Link href="/businesses">Administrar negocios</Link>
+            </Button>
+          )}
           <Button
             type="button"
             variant="outline"
             onClick={() => void authService.logout()}
-            className="mt-6 border-white/10 bg-transparent text-white"
+            className="mt-3 border-white/10 bg-transparent text-white"
           >
             <LogOut className="h-4 w-4" />
             Cerrar sesión

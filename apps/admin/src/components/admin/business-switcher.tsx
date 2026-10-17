@@ -51,8 +51,6 @@ export default function BusinessSwitcher() {
   const [platformSelectorOpen, setPlatformSelectorOpen] =
     useState(false);
 
-  if (!activeContext) return null;
-
   const contextualLabel = isPlatformAdmin
     ? activeMembership
       ? `Administrador de plataforma · ${getRoleLabel(activeMembership.role)}`
@@ -68,12 +66,12 @@ export default function BusinessSwitcher() {
       <span className="min-w-0 flex-1 text-left">
         <span
           className="block truncate text-sm font-medium text-white"
-          title={activeContext.business_name}
+          title={activeContext?.business_name ?? "Sin negocio operativo"}
         >
-          {activeContext.business_name}
+          {activeContext?.business_name ?? "Sin negocio operativo"}
         </span>
         <span className="block truncate text-xs font-normal text-zinc-500">
-          {contextualLabel}
+          {activeContext ? contextualLabel : "Selecciona un negocio activo"}
         </span>
       </span>
     </>
@@ -90,7 +88,7 @@ export default function BusinessSwitcher() {
             type="button"
             variant="ghost"
             className="h-auto min-w-0 max-w-56 justify-start gap-3 border border-white/10 bg-white/[0.03] px-3 py-2 hover:bg-white/[0.07] sm:max-w-72"
-            aria-label={`Cambiar negocio global. Actual: ${activeContext.business_name}`}
+            aria-label={`Cambiar negocio global. Actual: ${activeContext?.business_name ?? "ninguno"}`}
           >
             {content}
             <ChevronsUpDown className="h-4 w-4 shrink-0 text-zinc-500" />
@@ -111,11 +109,11 @@ export default function BusinessSwitcher() {
     );
   }
 
-  if (memberships.length <= 1 || !activeMembership) {
+  if (memberships.length <= 1) {
     return (
       <div
         className="flex min-w-0 max-w-56 items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 sm:max-w-72"
-        aria-label={`Negocio activo: ${activeContext.business_name}`}
+        aria-label={`Negocio activo: ${activeContext?.business_name ?? "ninguno"}`}
       >
         {content}
       </div>
@@ -129,7 +127,7 @@ export default function BusinessSwitcher() {
           type="button"
           variant="ghost"
           className="h-auto min-w-0 max-w-56 justify-start gap-3 border border-white/10 bg-white/[0.03] px-3 py-2 hover:bg-white/[0.07] sm:max-w-72"
-          aria-label={`Cambiar negocio. Actual: ${activeContext.business_name}`}
+          aria-label={`Cambiar negocio. Actual: ${activeContext?.business_name ?? "ninguno"}`}
         >
           {content}
           <ChevronsUpDown className="h-4 w-4 shrink-0 text-zinc-500" />
@@ -144,7 +142,7 @@ export default function BusinessSwitcher() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-white/10" />
         <DropdownMenuRadioGroup
-          value={activeMembership.membership_public_id}
+          value={activeMembership?.membership_public_id ?? ""}
           onValueChange={selectMembership}
         >
           {memberships.map((membership) => (
@@ -153,7 +151,7 @@ export default function BusinessSwitcher() {
               value={membership.membership_public_id}
               aria-current={
                 membership.membership_public_id ===
-                activeMembership.membership_public_id
+                activeMembership?.membership_public_id
                   ? "true"
                   : undefined
               }

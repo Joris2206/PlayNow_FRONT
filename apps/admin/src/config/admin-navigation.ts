@@ -1,5 +1,6 @@
 import {
   Boxes,
+  Building2,
   CircleDollarSign,
   CreditCard,
   HandCoins,
@@ -34,6 +35,12 @@ export const adminNavigation: readonly AdminNavigationItem[] = [
     href: "/dashboard",
     icon: LayoutDashboard,
     access: "dashboard",
+  },
+  {
+    label: "Negocios",
+    href: "/businesses",
+    icon: Building2,
+    access: "businesses",
   },
   {
     label: "Productos",
@@ -123,9 +130,15 @@ export const adminNavigation: readonly AdminNavigationItem[] = [
 
 export function getFirstAccessibleAdminRoute(
   role: UserRole | undefined,
-  isPlatformAdmin = false
+  isPlatformAdmin = false,
+  canAccessBusinessAdministration = false
 ) {
   return adminNavigation.find((item) =>
-    hasAccess(role, item.access, isPlatformAdmin)
+    hasAccess(
+      role,
+      item.access,
+      isPlatformAdmin,
+      canAccessBusinessAdministration
+    )
   )?.href;
 }

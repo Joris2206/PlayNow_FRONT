@@ -26,7 +26,9 @@ export default function AdminRouteGuard({
 }: AdminRouteGuardProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { isPlatformAdmin, role } = useAuth();
+  const { isPlatformAdmin, role, user } = useAuth();
+  const canAccessBusinessAdministration =
+    user?.can_access_business_administration === true;
   const navigationItem = adminNavigation.find(
     (item) =>
       pathname === item.href ||
@@ -37,23 +39,30 @@ export default function AdminRouteGuard({
       hasAccess(
         role ?? undefined,
         navigationItem.access,
-        isPlatformAdmin
+        isPlatformAdmin,
+        canAccessBusinessAdministration
       )
   );
   const fallbackRoute = getFirstAccessibleAdminRoute(
     role ?? undefined,
-    isPlatformAdmin
+    isPlatformAdmin,
+    canAccessBusinessAdministration
   );
+  const deniedBusinessesRoute =
+    navigationItem?.access === "businesses" &&
+    !canAccessBusinessAdministration;
+  const redirectRoute =
+    fallbackRoute ?? (deniedBusinessesRoute ? "/dashboard" : undefined);
 
   useEffect(() => {
-    if (!hasCurrentRouteAccess && fallbackRoute) {
-      router.replace(fallbackRoute);
+    if (!hasCurrentRouteAccess && redirectRoute) {
+      router.replace(redirectRoute);
     }
-  }, [fallbackRoute, hasCurrentRouteAccess, router]);
+  }, [hasCurrentRouteAccess, redirectRoute, router]);
 
   if (hasCurrentRouteAccess) return children;
 
-  if (fallbackRoute) {
+  if (redirectRoute) {
     return (
       <div className="flex min-h-80 items-center justify-center">
         <div className="flex flex-col items-center gap-4">

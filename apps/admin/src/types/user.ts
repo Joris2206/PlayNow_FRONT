@@ -13,5 +13,6 @@ export type AuthUser = {
   email: string;
   full_name: string;
   is_superuser: boolean;
+  can_access_business_administration: boolean;
   memberships: BusinessMembership[];
 };

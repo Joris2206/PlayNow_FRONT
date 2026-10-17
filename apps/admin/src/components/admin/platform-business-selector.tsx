@@ -10,6 +10,8 @@ import ListPagination from "@/components/shared/list-pagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+import { isBusinessOperational } from "@/types/business";
+
 const PAGE_SIZE = 10;
 const ORDERING = "business_name";
 
@@ -125,6 +127,7 @@ export default function PlatformBusinessSelector({
               );
               const selected =
                 business.public_id === activeBusinessPublicId;
+              const operational = isBusinessOperational(business);
 
               return (
                 <Button
@@ -133,6 +136,7 @@ export default function PlatformBusinessSelector({
                   variant="ghost"
                   role="listitem"
                   aria-current={selected ? "true" : undefined}
+                  disabled={!operational}
                   onClick={() => {
                     if (selectBusiness(business)) onSelected?.();
                   }}
@@ -149,8 +153,14 @@ export default function PlatformBusinessSelector({
                       {membership
                         ? ROLE_LABELS[membership.role]
                         : "Administrador de plataforma"}
-                      {selected ? " · Activo" : ""}
+                      {` · ${business.status_name}`}
+                      {selected ? " · Seleccionado" : ""}
                     </span>
+                    {!operational && (
+                      <span className="mt-1 block text-xs text-amber-400">
+                        No disponible como contexto operativo
+                      </span>
+                    )}
                   </span>
                 </Button>
               );

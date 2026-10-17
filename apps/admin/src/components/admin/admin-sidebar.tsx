@@ -25,13 +25,15 @@ export default function AdminSidebar({
     isLoading,
     isPlatformAdmin,
     role,
+    user,
   } = useAuth();
   const visibleNavigation = adminNavigation.filter(
     (item) =>
       hasAccess(
         role ?? undefined,
         item.access,
-        isPlatformAdmin
+        isPlatformAdmin,
+        user?.can_access_business_administration === true
       )
   );
   const homeHref = visibleNavigation[0]?.href ?? "/dashboard";

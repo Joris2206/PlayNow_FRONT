@@ -33,7 +33,10 @@ import { businessKeys } from "@/hooks/use-businesses";
 import { businessService } from "@/services/business-service";
 import { userService } from "@/services/user-service";
 
-import type { Business } from "@/types/business";
+import {
+  isBusinessOperational,
+  type Business,
+} from "@/types/business";
 import type {
   AuthUser,
   BusinessMembership,
@@ -431,12 +434,33 @@ export default function AuthProvider({
     });
   }, [needsPlatformBusiness, platformBusinessError, userPublicId]);
 
+  useEffect(() => {
+    if (
+      !needsPlatformBusiness ||
+      !platformBusiness ||
+      !userPublicId ||
+      isBusinessOperational(platformBusiness)
+    ) {
+      return;
+    }
+
+    platformBusinessSelectionStorage.remove(userPublicId);
+    setBusinessSelection({
+      userPublicId,
+      status: "selection-required",
+    });
+  }, [needsPlatformBusiness, platformBusiness, userPublicId]);
+
   const activeContext = useMemo<ActiveBusinessContext | null>(() => {
     if (activeMembership) {
       return { source: "membership", ...activeMembership };
     }
 
-    if (needsPlatformBusiness && platformBusiness) {
+    if (
+      needsPlatformBusiness &&
+      platformBusiness &&
+      isBusinessOperational(platformBusiness)
+    ) {
       return {
         source: "platform",
         business_public_id: platformBusiness.public_id,
@@ -485,7 +509,13 @@ export default function AuthProvider({
 
   const selectBusiness = useCallback(
     (business: Business) => {
-      if (!userPublicId || !isPlatformAdmin) return false;
+      if (
+        !userPublicId ||
+        !isPlatformAdmin ||
+        !isBusinessOperational(business)
+      ) {
+        return false;
+      }
 
       queryClient.setQueryData(
         businessKeys.detail(business.public_id),

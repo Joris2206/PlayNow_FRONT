@@ -1,8 +1,21 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
+import { authQueryKeys } from "@/lib/auth-query-keys";
+import { HttpError } from "@/lib/http";
 import { businessService } from "@/services/business-service";
+
+import {
+  isBusinessCapabilities,
+  type Business,
+  type CreateBusinessRequest,
+  type UpdateBusinessRequest,
+} from "@/types/business";
 
 type UseBusinessesParams = {
   enabled: boolean;
@@ -44,5 +57,145 @@ export function useBusinesses(params: UseBusinessesParams) {
         status_public_id: params.statusPublicId,
     }),
     enabled: params.enabled,
+  });
+}
+
+export function useBusiness(publicId: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: businessKeys.detail(publicId),
+    queryFn: () => businessService.get(publicId!),
+    enabled: Boolean(publicId) && enabled,
+    retry: false,
+    refetchOnMount: "always",
+  });
+}
+
+async function refreshBusinessContext(
+  queryClient: ReturnType<typeof useQueryClient>,
+  publicId?: string
+) {
+  if (publicId) {
+    const isOperationalQuery = (query: {
+      queryKey: readonly unknown[];
+    }) =>
+      query.queryKey[0] !== businessKeys.all[0] &&
+      query.queryKey.includes(publicId);
+
+    await queryClient.cancelQueries({ predicate: isOperationalQuery });
+    queryClient.removeQueries({ predicate: isOperationalQuery });
+  }
+
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: businessKeys.all }),
+    queryClient.invalidateQueries({
+      queryKey: authQueryKeys.me,
+      refetchType: "active",
+    }),
+  ]);
+}
+
+function cacheCompleteBusiness(
+  queryClient: ReturnType<typeof useQueryClient>,
+  business: Business
+) {
+  if (!isBusinessCapabilities(business.capabilities)) return;
+
+  queryClient.setQueryData(
+    businessKeys.detail(business.public_id),
+    business
+  );
+}
+
+function refreshCapabilitiesAfterConflict(
+  queryClient: ReturnType<typeof useQueryClient>,
+  error: unknown,
+  publicId: string
+) {
+  if (
+    !(error instanceof HttpError) ||
+    ![403, 404, 409].includes(error.status)
+  ) {
+    return;
+  }
+
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: businessKeys.lists() }),
+    queryClient.invalidateQueries({
+      queryKey: businessKeys.detail(publicId),
+      exact: true,
+    }),
+  ]);
+}
+
+export function useCreateBusiness() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateBusinessRequest) =>
+      businessService.create(data),
+    onSuccess: (business) => {
+      cacheCompleteBusiness(queryClient, business);
+      return refreshBusinessContext(queryClient);
+    },
+  });
+}
+
+type UpdateBusinessVariables = {
+  publicId: string;
+  data: UpdateBusinessRequest;
+};
+
+export function useUpdateBusiness() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ publicId, data }: UpdateBusinessVariables) =>
+      businessService.update(publicId, data),
+    onSuccess: (business) => {
+      cacheCompleteBusiness(queryClient, business);
+      return refreshBusinessContext(queryClient);
+    },
+    onError: (error, variables) =>
+      refreshCapabilitiesAfterConflict(
+        queryClient,
+        error,
+        variables.publicId
+      ),
+  });
+}
+
+export function useSuspendBusiness() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (publicId: string) => businessService.suspend(publicId),
+    onSuccess: (_business, publicId) =>
+      refreshBusinessContext(queryClient, publicId),
+    onError: (error, publicId) =>
+      refreshCapabilitiesAfterConflict(queryClient, error, publicId),
+  });
+}
+
+export function useReactivateBusiness() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (publicId: string) => businessService.reactivate(publicId),
+    onSuccess: (_business, publicId) =>
+      refreshBusinessContext(queryClient, publicId),
+    onError: (error, publicId) =>
+      refreshCapabilitiesAfterConflict(queryClient, error, publicId),
+  });
+}
+
+export function useArchiveBusiness() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (publicId: string) => businessService.archive(publicId),
+    onSuccess: (_result, publicId) =>
+      refreshBusinessContext(queryClient, publicId),
+    onError: (error, publicId) =>
+      refreshCapabilitiesAfterConflict(queryClient, error, publicId),
   });
 }
