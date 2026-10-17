@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import {
   isBusinessCapabilities,
   type Business,
+  type UpdateBusinessRequest,
 } from "@/types/business";
 
 type BusinessFormDialogProps = {
@@ -77,6 +78,14 @@ export default function BusinessFormDialog({
     setInitialOwnerEmail("");
   }, [business, open]);
 
+  useEffect(() => {
+    if (!open || !businessQuery.data) return;
+
+    setBusinessName(businessQuery.data.business_name);
+    setDescription(businessQuery.data.description);
+    setCurrency(businessQuery.data.currency);
+  }, [businessQuery.data, open]);
+
   const trimmedName = businessName.trim();
   const trimmedCurrency = currency.trim().toUpperCase();
   const trimmedOwnerEmail = initialOwnerEmail.trim();
@@ -89,9 +98,23 @@ export default function BusinessFormDialog({
     (currentCapabilities?.can_edit === true &&
       !capabilitiesMayBeStale);
   const canCreate = Boolean(business || isPlatformAdmin);
+  const changedName = Boolean(
+    currentBusiness && trimmedName !== currentBusiness.business_name
+  );
+  const changedDescription = Boolean(
+    currentBusiness &&
+      description.trim() !== currentBusiness.description
+  );
+  const changedCurrency = Boolean(
+    currentBusiness && trimmedCurrency !== currentBusiness.currency
+  );
+  const hasEditChanges = Boolean(
+    changedName || changedDescription || changedCurrency
+  );
   const canSubmit =
     Boolean(trimmedName && trimmedCurrency) &&
     (!ownerEmailRequired || Boolean(trimmedOwnerEmail)) &&
+    (!business || hasEditChanges) &&
     canEdit &&
     canCreate &&
     !mutation.isPending;
@@ -113,13 +136,14 @@ export default function BusinessFormDialog({
 
     try {
       if (business) {
+        const data: UpdateBusinessRequest = {};
+        if (changedName) data.business_name = trimmedName;
+        if (changedDescription) data.description = description.trim();
+        if (changedCurrency) data.currency = trimmedCurrency;
+
         await updateBusiness.mutateAsync({
           publicId: business.public_id,
-          data: {
-            business_name: trimmedName,
-            description: description.trim(),
-            currency: trimmedCurrency,
-          },
+          data,
         });
         onSaved("Los datos del negocio se actualizaron correctamente.");
       } else {

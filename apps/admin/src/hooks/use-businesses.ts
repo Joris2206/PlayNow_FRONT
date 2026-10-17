@@ -12,7 +12,7 @@ import { businessService } from "@/services/business-service";
 
 import {
   isBusinessCapabilities,
-  type Business,
+  type BusinessMutationResponse,
   type CreateBusinessRequest,
   type UpdateBusinessRequest,
 } from "@/types/business";
@@ -96,13 +96,13 @@ async function refreshBusinessContext(
 
 function cacheCompleteBusiness(
   queryClient: ReturnType<typeof useQueryClient>,
-  business: Business
+  business: BusinessMutationResponse
 ) {
   if (!isBusinessCapabilities(business.capabilities)) return;
 
   queryClient.setQueryData(
     businessKeys.detail(business.public_id),
-    business
+    { ...business, capabilities: business.capabilities }
   );
 }
 
@@ -118,13 +118,24 @@ function refreshCapabilitiesAfterConflict(
     return;
   }
 
-  return Promise.all([
+  const invalidations = [
     queryClient.invalidateQueries({ queryKey: businessKeys.lists() }),
     queryClient.invalidateQueries({
       queryKey: businessKeys.detail(publicId),
       exact: true,
     }),
-  ]);
+  ];
+
+  if ([403, 404].includes(error.status)) {
+    invalidations.push(
+      queryClient.invalidateQueries({
+        queryKey: authQueryKeys.me,
+        refetchType: "active",
+      })
+    );
+  }
+
+  return Promise.all(invalidations);
 }
 
 export function useCreateBusiness() {

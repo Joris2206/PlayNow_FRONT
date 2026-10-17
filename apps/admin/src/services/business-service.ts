@@ -5,6 +5,7 @@ import type { PaginatedResponse } from "@/types/api";
 import type {
   Business,
   BusinessListParams,
+  BusinessMutationResponse,
   BusinessTransitionResponse,
   CreateBusinessRequest,
   UpdateBusinessRequest,
@@ -31,15 +32,18 @@ export const businessService = {
     return http.get<Business>(`/api/businesses/${publicId}/`);
   },
 
-  create(data: CreateBusinessRequest): Promise<Business> {
-    return http.post<Business>("/api/businesses/", data);
+  create(data: CreateBusinessRequest): Promise<BusinessMutationResponse> {
+    return http.post<BusinessMutationResponse>("/api/businesses/", data);
   },
 
   update(
     publicId: string,
     data: UpdateBusinessRequest
-  ): Promise<Business> {
-    return http.patch<Business>(`/api/businesses/${publicId}/`, data);
+  ): Promise<BusinessMutationResponse> {
+    return http.patch<BusinessMutationResponse>(
+      `/api/businesses/${publicId}/`,
+      data
+    );
   },
 
   suspend(publicId: string): Promise<BusinessTransitionResponse> {

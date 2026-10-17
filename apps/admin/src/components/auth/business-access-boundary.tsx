@@ -30,7 +30,9 @@ export default function BusinessAccessBoundary({
 
   if (
     pathname === "/businesses" ||
-    pathname.startsWith("/businesses/")
+    pathname.startsWith("/businesses/") ||
+    pathname === "/platform-users" ||
+    pathname.startsWith("/platform-users/")
   ) {
     return children;
   }

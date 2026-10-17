@@ -63,7 +63,7 @@ export default function BusinessDetailDialog({
           </div>
         )}
 
-        {current && !query.isLoading && (
+        {current && !query.isLoading && !query.isError && (
           <dl className="grid gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-5 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <dt className="text-xs uppercase tracking-wide text-zinc-600">Nombre</dt>

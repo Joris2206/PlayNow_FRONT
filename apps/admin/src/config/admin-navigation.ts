@@ -11,6 +11,8 @@ import {
   Tags,
   Truck,
   UserRoundCog,
+  UserRoundSearch,
+  UsersRound,
   Users,
   WalletCards,
   type LucideIcon,
@@ -30,6 +32,12 @@ export type AdminNavigationItem = {
 };
 
 export const adminNavigation: readonly AdminNavigationItem[] = [
+  {
+    label: "Usuarios de plataforma",
+    href: "/platform-users",
+    icon: UserRoundSearch,
+    access: "platform-users",
+  },
   {
     label: "Dashboard",
     href: "/dashboard",
@@ -95,6 +103,12 @@ export const adminNavigation: readonly AdminNavigationItem[] = [
     href: "/employees",
     icon: UserRoundCog,
     access: "employees",
+  },
+  {
+    label: "Usuarios y accesos",
+    href: "/users-access",
+    icon: UsersRound,
+    access: "users-access",
   },
   {
     label: "Comisiones",

@@ -1,6 +1,11 @@
 import { ROLES, type UserRole } from "@/types/roles";
 
 const ADMIN_ACCESS = {
+  "platform-users": {
+    roles: [],
+    platformAdmin: true,
+    platformOnly: true,
+  },
   businesses: {
     roles: [],
     platformAdmin: false,
@@ -99,6 +104,20 @@ const ADMIN_ACCESS = {
     ROLES.OWNER,
     ROLES.ADMIN,
   ], platformAdmin: true },
+  "users-access": { roles: [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+  ], platformAdmin: true },
+  "users-access-write": { roles: [
+    ROLES.OWNER,
+    ROLES.ADMIN,
+  ], platformAdmin: true },
+  "users-access-create-user": { roles: [
+    ROLES.OWNER,
+  ], platformAdmin: true },
+  ownership: { roles: [
+    ROLES.OWNER,
+  ], platformAdmin: true },
   "employees-write": { roles: [
     ROLES.OWNER,
     ROLES.ADMIN,
@@ -173,6 +192,7 @@ const ADMIN_ACCESS = {
     roles: readonly UserRole[];
     platformAdmin: boolean;
     businessAdministration?: boolean;
+    platformOnly?: boolean;
   }
 >;
 
@@ -206,6 +226,10 @@ export function hasAccess(
 
   const access = ADMIN_ACCESS[policy];
 
+  if ("platformOnly" in access && access.platformOnly) {
+    return isPlatformAdmin;
+  }
+
   if (
     "businessAdministration" in access &&
     access.businessAdministration
@@ -216,5 +240,76 @@ export function hasAccess(
   return (
     hasRole(currentRole, access.roles) ||
     (isPlatformAdmin && access.platformAdmin)
+  );
+}
+
+export type ManageableMembership = {
+  user_public_id: string;
+  role: UserRole;
+};
+
+export type OwnershipMembership = ManageableMembership & {
+  is_active: boolean;
+};
+
+const LOWER_MEMBERSHIP_ROLES = [
+  ROLES.CASHIER,
+  ROLES.SELLER,
+  ROLES.INVENTORY,
+  ROLES.VIEWER,
+] as const;
+
+const NON_OWNER_MEMBERSHIP_ROLES = [
+  ROLES.ADMIN,
+  ...LOWER_MEMBERSHIP_ROLES,
+] as const;
+
+export function canManageMembership(
+  actorUserPublicId: string | undefined,
+  actorRole: UserRole | undefined,
+  isPlatformAdmin: boolean,
+  target: ManageableMembership
+) {
+  if (!actorUserPublicId || target.user_public_id === actorUserPublicId) {
+    return false;
+  }
+
+  if (target.role === ROLES.OWNER) return false;
+  if (isPlatformAdmin || actorRole === ROLES.OWNER) return true;
+
+  return actorRole === ROLES.ADMIN && target.role !== ROLES.ADMIN;
+}
+
+export function getAssignableMembershipRoles(
+  actorRole: UserRole | undefined,
+  isPlatformAdmin: boolean
+): readonly Exclude<UserRole, "owner">[] {
+  if (isPlatformAdmin || actorRole === ROLES.OWNER) {
+    return NON_OWNER_MEMBERSHIP_ROLES;
+  }
+
+  return actorRole === ROLES.ADMIN ? LOWER_MEMBERSHIP_ROLES : [];
+}
+
+export function canPromoteMembershipToOwner(
+  actorUserPublicId: string | undefined,
+  target: OwnershipMembership
+) {
+  return Boolean(
+    actorUserPublicId &&
+      target.user_public_id !== actorUserPublicId &&
+      target.role !== ROLES.OWNER &&
+      target.is_active
+  );
+}
+
+export function canRemoveMembershipOwner(
+  actorUserPublicId: string | undefined,
+  target: OwnershipMembership
+) {
+  return Boolean(
+    actorUserPublicId &&
+      target.user_public_id !== actorUserPublicId &&
+      target.role === ROLES.OWNER
   );
 }

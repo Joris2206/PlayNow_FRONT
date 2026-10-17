@@ -41,6 +41,8 @@ export type BusinessTransitionResponse = Omit<
   capabilities?: BusinessCapabilities;
 };
 
+export type BusinessMutationResponse = BusinessTransitionResponse;
+
 export type BusinessListParams = ListQueryParams & {
   status_public_id?: string;
 };
@@ -53,9 +55,9 @@ export type CreateBusinessRequest = {
 };
 
 export type UpdateBusinessRequest = {
-  business_name: string;
-  description: string;
-  currency: string;
+  business_name?: string;
+  description?: string;
+  currency?: string;
 };
 
 export function isBusinessOperational(business: Business) {
