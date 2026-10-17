@@ -1,8 +1,8 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AlertCircle, Building2, LoaderCircle, LogOut } from "lucide-react";
 
 import { useAuth } from "@/providers/auth-provider";
@@ -18,6 +18,7 @@ export default function BusinessAccessBoundary({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const {
     memberships,
     activeBusinessPublicId,
@@ -27,13 +28,34 @@ export default function BusinessAccessBoundary({
     selectMembership,
     user,
   } = useAuth();
-
-  if (
+  const isBusinessIndependentRoute =
     pathname === "/businesses" ||
     pathname.startsWith("/businesses/") ||
     pathname === "/platform-users" ||
-    pathname.startsWith("/platform-users/")
-  ) {
+    pathname.startsWith("/platform-users/");
+  const administrativeFallback =
+    user?.can_access_business_administration === true
+      ? "/businesses"
+      : isPlatformAdmin
+        ? "/platform-users"
+        : null;
+  const shouldOpenAdministrativeFallback =
+    !isBusinessIndependentRoute &&
+    !activeBusinessPublicId &&
+    businessStatus !== "resolving" &&
+    administrativeFallback !== null;
+
+  useEffect(() => {
+    if (shouldOpenAdministrativeFallback) {
+      router.replace(administrativeFallback);
+    }
+  }, [
+    administrativeFallback,
+    router,
+    shouldOpenAdministrativeFallback,
+  ]);
+
+  if (isBusinessIndependentRoute) {
     return children;
   }
 
@@ -44,6 +66,19 @@ export default function BusinessAccessBoundary({
           <LoaderCircle className="h-8 w-8 animate-spin text-red-500" />
           <p className="text-sm text-zinc-400">
             Preparando tu negocio...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (shouldOpenAdministrativeFallback) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-white">
+        <div className="flex flex-col items-center gap-4">
+          <LoaderCircle className="h-8 w-8 animate-spin text-red-500" />
+          <p className="text-sm text-zinc-400">
+            Abriendo la administración...
           </p>
         </div>
       </div>
